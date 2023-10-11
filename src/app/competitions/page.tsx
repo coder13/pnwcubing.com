@@ -1,4 +1,4 @@
-import CompetitionCard from "@/components/CompetitionCard/CompetitionCard";
+import { CompetitionCard } from "@/components/CompetitionCard";
 import { fetchUpcomingComps } from "@/lib/wcaApi";
 
 async function getCompetitions() {
@@ -21,6 +21,7 @@ async function getCompetitions() {
 
 export default async function Delegates() {
   const competitions = await getCompetitions();
+  console.log(competitions);
 
   return (
     <>

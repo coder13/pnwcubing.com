@@ -1,4 +1,4 @@
-interface Competition {
+export interface APICompetition {
   id: string;
   city: string;
   name: string;
@@ -7,6 +7,7 @@ interface Competition {
   end_date: string;
   registration_open: string;
   registration_close: string;
+  event_ids: string[];
 }
 
 /**
@@ -16,7 +17,7 @@ interface Competition {
  */
 export const fetchUpcomingComps = async (
   query: string,
-): Promise<Competition[]> => {
+): Promise<APICompetition[]> => {
   const res = await fetch(
     "https://www.worldcubeassociation.org/api/v0/competitions?q=" +
       query +

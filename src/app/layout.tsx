@@ -25,7 +25,6 @@ export default function RootLayout({
         )}
       >
         <Header />
-
         <main className="flex justify-center flex-1">
           <div className="flex flex-col w-2/3">{children}</div>
         </main>
