@@ -16,7 +16,7 @@ const navItems = [
   },
 ];
 
-export default function Header() {
+export function Header() {
   const pathname = usePathname();
 
   return (

@@ -1,4 +1,5 @@
-import Header from "@/components/Header/Header";
+import classnames from "classnames";
+import { Header, Footer } from "@/components/Layout";
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -17,12 +18,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body
+        className={classnames(
+          inter.className,
+          "flex flex-col w-screen h-screen overflow-x-hidden space-y-2",
+        )}
+      >
         <Header />
 
-        <main className="flex justify-center">
+        <main className="flex justify-center flex-1">
           <div className="flex flex-col w-2/3">{children}</div>
         </main>
+        <Footer />
       </body>
     </html>
   );
