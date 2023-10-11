@@ -31,3 +31,24 @@ export const fetchUpcomingComps = async (
 
   return res.json();
 };
+
+interface APIPerson {
+  id: number;
+  name: string;
+  avatar: {
+    url: string;
+  };
+}
+
+export const getPerson = async (wcaId: string): Promise<APIPerson | null> => {
+  const res = await fetch(
+    `https://www.worldcubeassociation.org/api/v0/persons/${wcaId}`,
+  );
+
+  if (!res.ok) {
+    console.warn(`Failed to fetch data for ${wcaId}`);
+    return null;
+  }
+
+  return (await res.json()).person;
+};
