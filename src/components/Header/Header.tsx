@@ -19,7 +19,7 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <Navbar rounded>
+    <Navbar>
       <Navbar.Brand href="/">
         <Image
           alt="Pacific Northwest Cubing Logo"
