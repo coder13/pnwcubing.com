@@ -1,22 +1,14 @@
 "use client";
 
-import { isLikelyStateChampionship } from "@/lib/competitions";
+// import { isLikelyStateChampionship } from "@/lib/competitions";
 import { formatDateRange } from "@/lib/time";
+import { APICompetition } from "@/lib/wcaApi";
 
-import { Alert, Card } from "flowbite-react";
+import { Alert } from "flowbite-react";
 
-interface CompetitionCardProps {
-  id: string;
-  city: string;
-  name: string;
-  url: string;
-  start_date: string;
-  end_date: string;
-  registration_open: string;
-  registration_close: string;
-}
+interface CompetitionCardProps extends APICompetition {}
 
-export default function CompetitionCard({
+export function CompetitionCard({
   city,
   name,
   url,
@@ -24,6 +16,7 @@ export default function CompetitionCard({
   end_date,
   registration_open,
   registration_close,
+  event_ids,
   ...props
 }: CompetitionCardProps) {
   const isRegistrationOpen = new Date(registration_open).getTime() < Date.now();
@@ -42,8 +35,9 @@ export default function CompetitionCard({
         </span>
         <span>{formatDateRange(start_date, end_date)}</span>
       </p>
-      <p className="font-normal text-gray-700 dark:text-gray-400">
-        <p>{city}</p>
+      <p className="font-normal text-gray-700 dark:text-gray-400 flex justify-between">
+        <span>{city}</span>
+        <span>{event_ids.join(", ")}</span>
       </p>
       {isRegistrationOpen ? (
         <Alert color={isRegistrationClosed ? "failure" : "success"}>
