@@ -1,16 +1,17 @@
 import { createDirectus } from "@directus/sdk";
 import { rest } from "@directus/sdk/rest";
 
-interface Delegate {
+export interface Delegate {
   id: string;
   name: string;
   email: string;
-  region: string;
-  description: string;
   Region: string;
+  Description: string;
+  date_updated: string;
+  wcaId: string;
 }
 
-interface Schema {
+export interface Schema {
   Delegates: Delegate[];
 }
 
