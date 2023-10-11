@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@directus/sdk": "^12.0.1",
+    "flowbite": "^1.8.1",
+    "flowbite-react": "^0.6.4",
     "next": "13.5.4",
     "react": "^18",
     "react-dom": "^18"
