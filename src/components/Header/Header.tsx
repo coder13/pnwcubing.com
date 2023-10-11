@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Button, Navbar } from "flowbite-react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 const navItems = [
   {
@@ -19,13 +20,13 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <Navbar>
-      <Navbar.Brand href="/">
+    <Navbar className="flex" fluid>
+      <Navbar.Brand href="/" as={Link}>
         <Image
           alt="Pacific Northwest Cubing Logo"
-          className="mr-3"
           src="/full.svg"
-          width={100}
+          className="-m-6"
+          width={200}
           height={100}
         />
       </Navbar.Brand>
@@ -33,6 +34,7 @@ export default function Header() {
       <Navbar.Collapse>
         {navItems.map((nav) => (
           <Navbar.Link
+            as={Link}
             active={pathname === nav.href}
             key={nav.href}
             href={nav.href}
