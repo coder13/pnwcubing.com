@@ -1,13 +1,13 @@
-import directus from '../../lib/directus';
-import { readItems } from '@directus/sdk/rest';
+import directus from "../../lib/directus";
+import { readItems } from "@directus/sdk/rest";
 
 async function getDelegates() {
-	return directus.request(readItems('Delegates'));
+  return directus.request(readItems("Delegates"));
 }
-  
+
 export default async function Delegates() {
-	const delegates = await getDelegates();
-  
+  const delegates = await getDelegates();
+
   return (
     <main>
       <h2>Delegates</h2>
@@ -15,5 +15,5 @@ export default async function Delegates() {
         <p key={d.id}>{d.name}</p>
       ))}
     </main>
-  )
+  );
 }
