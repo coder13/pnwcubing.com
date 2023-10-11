@@ -18,11 +18,11 @@ const months = [
 export const formatDateRange = (startDate: string, endDate: string) => {
   const start = new Date(
     new Date(startDate).getTime() +
-      new Date(startDate).getTimezoneOffset() * 60 * 1000
+      new Date(startDate).getTimezoneOffset() * 60 * 1000,
   );
   const end = new Date(
     new Date(endDate).getTime() +
-      new Date(endDate).getTimezoneOffset() * 60 * 1000
+      new Date(endDate).getTimezoneOffset() * 60 * 1000,
   );
   const startDay = `${start.getDate()}${numSuffix(start.getDate())}`;
 
