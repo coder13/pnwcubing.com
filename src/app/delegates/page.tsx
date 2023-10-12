@@ -1,7 +1,7 @@
 import { DelegateDetails } from "@/components/DelegateDetails";
 import directus from "../../lib/directus";
 import { readItems } from "@directus/sdk/rest";
-import { Fragment, Suspense } from "react";
+import { Fragment } from "react";
 
 async function getDelegates() {
   return directus.request(readItems("Delegates"));
@@ -10,7 +10,7 @@ async function getDelegates() {
 export default async function Delegates() {
   const delegates = await getDelegates();
   return (
-    <main>
+    <>
       <h2 className="text-4xl">Delegates</h2>
       <br />
       <div className="space-y-4">
@@ -21,6 +21,6 @@ export default async function Delegates() {
           </Fragment>
         ))}
       </div>
-    </main>
+    </>
   );
 }
