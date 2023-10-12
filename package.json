@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@directus/sdk": "^12.0.1",
+    "@vercel/analytics": "^1.1.1",
     "classnames": "^2.3.2",
     "flowbite": "^1.8.1",
     "flowbite-react": "^0.6.4",

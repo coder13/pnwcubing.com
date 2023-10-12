@@ -3,6 +3,7 @@ import { Header, Footer } from "@/components/Layout";
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,8 @@ export default function RootLayout({
           "flex flex-col w-screen h-screen overflow-x-hidden space-y-2",
         )}
       >
+        <Analytics />
+
         <Header />
         <main className="flex justify-center flex-1">
           <div className="flex flex-col w-full md:w-2/3 px-4">{children}</div>
