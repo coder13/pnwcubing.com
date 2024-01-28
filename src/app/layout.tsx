@@ -22,15 +22,13 @@ export default function RootLayout({
       <body
         className={classnames(
           inter.className,
-          "flex flex-col w-screen h-screen overflow-x-hidden space-y-2",
+          "flex flex-col w-screen h-screen overflow-x-hidden",
         )}
       >
         <Analytics />
 
         <Header />
-        <main className="flex justify-center flex-1">
-          <div className="flex flex-col w-full md:w-2/3 px-4">{children}</div>
-        </main>
+        {children}
         <Footer />
       </body>
     </html>
