@@ -22,7 +22,7 @@ export default function RootLayout({
       <body
         className={classnames(
           inter.className,
-          "flex flex-col w-screen h-screen overflow-x-hidden",
+          "flex flex-col flex-1 w-screen h-screen overflow-x-hidden",
         )}
       >
         <Analytics />

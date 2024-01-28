@@ -24,7 +24,7 @@ export default async function Delegates() {
   console.log(competitions);
 
   return (
-    <main className="flex justify-center flex-1">
+    <main className="flex justify-center flex-1 py-2 h-full">
       <div className="flex flex-col w-full md:w-2/3 px-4">
         <h1 className="text-4xl">Upcoming Competitions</h1>
         <p>
