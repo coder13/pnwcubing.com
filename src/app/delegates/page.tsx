@@ -4,7 +4,12 @@ import { readItems } from "@directus/sdk/rest";
 import { Fragment } from "react";
 
 async function getDelegates() {
-  return directus.request(readItems("Delegates"));
+  try {
+    return await directus.request(readItems("Delegates"));
+  } catch (e: any) {
+    console.error(e.errors);
+    return [];
+  }
 }
 
 export default async function Delegates() {
@@ -13,7 +18,7 @@ export default async function Delegates() {
   const delegatesGroupedByRegion = delegates.reduce(
     (acc, d) => ({
       ...acc,
-      [d.Region]: [...(acc[d.Region] || []), d],
+      [d.region]: [...(acc[d.region] || []), d],
     }),
     {} as Record<string, Delegate[]>,
   );

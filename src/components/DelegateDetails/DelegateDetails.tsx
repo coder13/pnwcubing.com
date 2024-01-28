@@ -9,7 +9,7 @@ export async function DelegateDetails({
   wcaId,
   name,
   email,
-  Description,
+  description,
 }: DelegateDetailsProps) {
   const person = await getPerson(wcaId);
 
@@ -32,7 +32,7 @@ export async function DelegateDetails({
         <p>
           <span className="text-2xl">{name}</span> ({wcaId})
         </p>
-        <p className="py-2">{Description}</p>
+        <p className="py-2">{description}</p>
       </div>
     </div>
   );
