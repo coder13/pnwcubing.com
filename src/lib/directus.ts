@@ -5,8 +5,8 @@ export interface Delegate {
   id: string;
   name: string;
   email: string;
-  Region: string;
-  Description: string;
+  region: string;
+  description: string;
   date_updated: string;
   wcaId: string;
 }
