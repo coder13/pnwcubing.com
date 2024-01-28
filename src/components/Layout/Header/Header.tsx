@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Button, Navbar } from "flowbite-react";
+import { Navbar } from "flowbite-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -20,7 +20,7 @@ export function Header() {
   const pathname = usePathname();
 
   return (
-    <Navbar className="flex" fluid>
+    <Navbar className="flex shadow-md" fluid>
       <Navbar.Brand href="/" as={Link}>
         <Image
           alt="Pacific Northwest Cubing Logo"
