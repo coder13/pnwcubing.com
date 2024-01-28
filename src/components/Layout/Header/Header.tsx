@@ -14,6 +14,10 @@ const navItems = [
     href: "/delegates",
     title: "Delegates",
   },
+  {
+    href: "/for-parents",
+    title: "For Parents",
+  },
 ];
 
 export function Header() {
