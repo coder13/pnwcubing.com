@@ -1,3 +1,7 @@
 export default function Loading() {
-  return <p>Loading...</p>;
+  return (
+    <div className="h-full">
+      <p>Loading...</p>
+    </div>
+  );
 }

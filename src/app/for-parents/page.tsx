@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Delegates() {
   return (
     <main className="flex justify-center flex-1">
@@ -81,13 +83,16 @@ export default function Delegates() {
             official. There is also an organizer. At times the delegate and
             organizer is the same person. Both will have a lot of information
             about the event and are a great resource. If you would like to
-            familiarize yourself with the local delegates, you can do so on the
-            Delegates tab!
+            familiarize yourself with the local delegates, you can do so on the{" "}
+            <Link href="/delegates" className="underline">
+              Delegates
+            </Link>{" "}
+            tab!
           </p>
 
           <p>
-            <b>Q</b>: How can I help at a comp when I don’t know how to solve a
-            cube?
+            <b>Q</b>: How can I help at a comp when I don&apos;t know how to
+            solve a cube?
           </p>
           <p>
             <b>A</b>: There are a couple of different ways that anyone can help.

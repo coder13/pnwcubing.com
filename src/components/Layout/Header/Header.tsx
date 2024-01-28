@@ -18,6 +18,11 @@ const navItems = [
     href: "/for-parents",
     title: "For Parents",
   },
+  {
+    href: "https://merch.pnwcubing.com/",
+    title: "Merchandise",
+    openInNewTab: true,
+  },
 ];
 
 export function Header() {
@@ -42,6 +47,7 @@ export function Header() {
             active={pathname === nav.href}
             key={nav.href}
             href={nav.href}
+            target={nav.openInNewTab ? "_blank" : undefined}
           >
             <p>{nav.title}</p>
           </Navbar.Link>
