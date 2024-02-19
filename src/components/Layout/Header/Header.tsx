@@ -23,13 +23,17 @@ const navItems = [
     title: "Merchandise",
     openInNewTab: true,
   },
+  {
+    href: "/contact",
+    title: "Contact",
+  },
 ];
 
 export function Header() {
   const pathname = usePathname();
 
   return (
-    <Navbar className="flex shadow-md" fluid>
+    <Navbar className="flex shadow-md sticky top-0 z-50" fluid>
       <Navbar.Brand href="/" as={Link}>
         <Image
           alt="Pacific Northwest Cubing Logo"

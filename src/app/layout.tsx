@@ -28,8 +28,11 @@ export default function RootLayout({
         <Analytics />
 
         <Header />
-        {children}
-        <Footer />
+        <div className="h-full overflow-x-hidden overflow-y-auto">
+          {children}
+          <div className="h-12" />
+        </div>
+        {/* <Footer /> */}
       </body>
     </html>
   );
