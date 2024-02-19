@@ -21,7 +21,6 @@ async function getCompetitions() {
 
 export default async function Delegates() {
   const competitions = await getCompetitions();
-  console.log(competitions);
 
   return (
     <main className="flex justify-center flex-1 py-2 h-full">

@@ -1,5 +1,5 @@
 import classnames from "classnames";
-import { Header, Footer } from "@/components/Layout";
+import { Header } from "@/components/Layout";
 import "./globals.css";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
