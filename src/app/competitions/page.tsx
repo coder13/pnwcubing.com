@@ -36,7 +36,7 @@ export default async function Delegates() {
           be able to still visit it if the competition allows.
         </p>
         <br />
-        <div className="flex flex-col w-full space-y-4">
+        <div className="flex flex-col w-full space-y-4 pb-12">
           {competitions.map((competition) => (
             <CompetitionCard key={competition.id} {...competition} />
           ))}

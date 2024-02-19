@@ -51,23 +51,21 @@ export function Header() {
         />
       </Navbar.Brand>
       <Navbar.Toggle onClick={() => setIsOpen((open) => !open)} />
-      {isOpen && (
-        <div className={classNames("w-full md:block md:w-auto")}>
-          <ul className="mt-4 flex flex-col md:mt-0 md:flex-row md:space-x-8 md:text-sm md:font-medium">
-            {navItems.map((nav) => (
-              <Navbar.Link
-                key={nav.href}
-                as={Link}
-                active={pathname === nav.href}
-                href={nav.href}
-                target={nav.openInNewTab ? "_blank" : undefined}
-              >
-                <p>{nav.title}</p>
-              </Navbar.Link>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div className={classNames("w-full md:block md:w-auto")}>
+        <ul className="mt-4 flex flex-col md:mt-0 md:flex-row md:space-x-8 md:text-sm md:font-medium">
+          {navItems.map((nav) => (
+            <Navbar.Link
+              key={nav.href}
+              as={Link}
+              active={pathname === nav.href}
+              href={nav.href}
+              target={nav.openInNewTab ? "_blank" : undefined}
+            >
+              <p>{nav.title}</p>
+            </Navbar.Link>
+          ))}
+        </ul>
+      </div>
     </Navbar>
   );
 }
