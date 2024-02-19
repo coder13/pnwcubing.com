@@ -25,7 +25,7 @@ export default async function Delegates() {
 
   return (
     <main className="flex justify-center flex-1 h-full">
-      <div className="flex flex-col w-full md:w-2/3 px-4">
+      <div className="flex flex-col w-full md:w-2/3 p-4">
         <h2 className="text-4xl">Delegates</h2>
         <br />
         <div className="space-y-1">

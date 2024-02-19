@@ -25,7 +25,7 @@ export default async function Delegates() {
 
   return (
     <main className="flex justify-center flex-1 py-2 h-full">
-      <div className="flex flex-col w-full md:w-2/3 px-4">
+      <div className="flex flex-col w-full md:w-2/3 p-4 space-y-2">
         <h1 className="text-4xl">Upcoming Competitions</h1>
         <p>
           The PNW has competitions all across Washington, Oregon, Alaska, BC,
@@ -37,7 +37,7 @@ export default async function Delegates() {
           be able to still visit it if the competition allows.
         </p>
         <br />
-        <div className="flex flex-col w-full space-y-2">
+        <div className="flex flex-col w-full space-y-4">
           {competitions.map((competition) => (
             <CompetitionCard key={competition.id} {...competition} />
           ))}
