@@ -4,6 +4,8 @@ import Image from "next/image";
 import { Navbar } from "flowbite-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import classNames from "classnames";
 
 const navItems = [
   {
@@ -30,10 +32,15 @@ const navItems = [
 ];
 
 export function Header() {
+  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
   return (
-    <Navbar className="flex shadow-md sticky top-0 z-50" fluid>
+    <Navbar className="flex shadow-md  z-50 min-h-20 ">
       <Navbar.Brand href="/" as={Link}>
         <Image
           alt="Pacific Northwest Cubing Logo"
@@ -43,20 +50,24 @@ export function Header() {
           height={100}
         />
       </Navbar.Brand>
-      <Navbar.Toggle />
-      <Navbar.Collapse>
-        {navItems.map((nav) => (
-          <Navbar.Link
-            as={Link}
-            active={pathname === nav.href}
-            key={nav.href}
-            href={nav.href}
-            target={nav.openInNewTab ? "_blank" : undefined}
-          >
-            <p>{nav.title}</p>
-          </Navbar.Link>
-        ))}
-      </Navbar.Collapse>
+      <Navbar.Toggle onClick={() => setIsOpen((open) => !open)} />
+      {isOpen && (
+        <div className={classNames("w-full md:block md:w-auto")}>
+          <ul className="mt-4 flex flex-col md:mt-0 md:flex-row md:space-x-8 md:text-sm md:font-medium">
+            {navItems.map((nav) => (
+              <Navbar.Link
+                key={nav.href}
+                as={Link}
+                active={pathname === nav.href}
+                href={nav.href}
+                target={nav.openInNewTab ? "_blank" : undefined}
+              >
+                <p>{nav.title}</p>
+              </Navbar.Link>
+            ))}
+          </ul>
+        </div>
+      )}
     </Navbar>
   );
 }

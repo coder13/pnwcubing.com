@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function LandingPageCards() {
   return (
-    <div className="py-4 px-8 grid grid-cols-1 grid-rows-[20vh] lg:grid-cols-3 gap-8 auto-rows-fr translate-y-40">
+    <div className="py-4 px-8 grid grid-cols-1 grid-rows-[min-content] lg:grid-cols-3 gap-4 lg:gap-8 auto-rows-fr translate-y-40">
       <Link href="/competitions" passHref className="grid-cols-1">
         <Card className="mb-auto row-span-1 h-full">
           <h5 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">

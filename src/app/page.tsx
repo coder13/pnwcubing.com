@@ -10,7 +10,7 @@ export default function Home() {
           backgroundPosition: "center",
           opacity: 0.7,
           width: "100vw",
-          height: "100vh",
+          height: "calc(100vh - 5em)",
         }}
         className="flex flex-col items-center justify-center"
       >

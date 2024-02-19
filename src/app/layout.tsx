@@ -30,7 +30,6 @@ export default function RootLayout({
         <Header />
         <div className="h-full overflow-x-hidden overflow-y-auto">
           {children}
-          <div className="h-12" />
         </div>
         {/* <Footer /> */}
       </body>
