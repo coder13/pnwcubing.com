@@ -12,6 +12,8 @@ async function getDelegates() {
   }
 }
 
+export const revalidate = 5; // revalidate api every 5 seconds
+
 export default async function Delegates() {
   const delegates = await getDelegates();
 
