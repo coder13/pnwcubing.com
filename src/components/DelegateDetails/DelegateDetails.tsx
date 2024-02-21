@@ -14,8 +14,8 @@ export async function DelegateDetails({
   const person = await getPerson(wcaId);
 
   return (
-    <div className="flex flex-col md:flex-row w-full">
-      <div className="flex flex-0 md:min-w-min flex-col items-center justify-center space-y-1 py-2">
+    <div className="flex flex-col sm:flex-row w-full">
+      <div className="flex flex-0 sm:min-w-min flex-col items-center justify-center space-y-1 py-2">
         <Image
           src={person?.avatar?.url || ""}
           alt={`Avatar for ${name}`}
@@ -24,7 +24,7 @@ export async function DelegateDetails({
           height="0"
           sizes="100vw"
           style={{ width: "100%", height: "auto" }}
-          className="min-w-[5rem] sm:max-w-[10rem] md:max-w-[15rem]"
+          className="min-w-[5rem] sm:max-w-[15rem]"
         />
         <EmailButton email={email} />
       </div>

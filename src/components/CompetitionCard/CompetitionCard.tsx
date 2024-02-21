@@ -33,10 +33,12 @@ export function CompetitionCard({
       target="_blank"
     >
       <p className="flex justify-between">
-        <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        <span className="text-lg sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
           {name}
         </span>
-        <span className="text-lg">{formatDateRange(start_date, end_date)}</span>
+        <span className="text-base sm:text-lg">
+          {formatDateRange(start_date, end_date)}
+        </span>
       </p>
       <p className="font-normal text-gray-700 dark:text-gray-400 flex justify-between">
         <span>{city}</span>
