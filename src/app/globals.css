@@ -15,3 +15,10 @@
     --background-end-rgb: 0, 0, 0;
   }
 }
+
+html {
+  font-size: 14px;
+  @screen md {
+    font-size: 16px;
+  }
+}

@@ -19,12 +19,14 @@ async function getCompetitions() {
     );
 }
 
+export const revalidate = 60; // revalidate api every 60 seconds
+
 export default async function Delegates() {
   const competitions = await getCompetitions();
 
   return (
     <main className="flex justify-center flex-1 py-2 h-full">
-      <div className="flex flex-col w-full md:w-2/3 p-4 space-y-2">
+      <div className="flex flex-col w-full max-w-screen-md p-4 space-y-2">
         <h1 className="text-4xl">Upcoming Competitions</h1>
         <p>
           The PNW has competitions all across Washington, Oregon, Alaska, BC,
@@ -33,7 +35,9 @@ export default async function Delegates() {
         <p>
           All competitions are open to all competitors of all ages and
           experiences. If registration has closed for a competition, you might
-          be able to still visit it if the competition allows.
+          be able to still visit it if the competition allows. Check on the
+          competition&apos;s website for more information on if spectators are
+          allowed.
         </p>
         <br />
         <div className="flex flex-col w-full space-y-4 pb-12">
