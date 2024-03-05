@@ -40,7 +40,7 @@ export function Header() {
   }, [pathname]);
 
   return (
-    <Navbar className="flex shadow-md  z-50 min-h-20 ">
+    <Navbar className="flex shadow-md z-50 h-20">
       <Navbar.Brand href="/" as={Link}>
         <Image
           alt="Pacific Northwest Cubing Logo"

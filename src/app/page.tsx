@@ -2,21 +2,21 @@ import { LandingPageCards } from "@/components/LandingPage/Cards";
 
 export default function Home() {
   return (
-    <main className="">
-      <div
+    <main className="overflow-hidden">
+      <section
         style={{
           background: "url(/images/landing.jpg)",
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: "",
           opacity: 0.7,
           width: "100vw",
           height: "calc(100vh - 5em)",
         }}
-        className="flex flex-col items-center justify-center"
+        className="grid grid-rows-[min_content] items-center justify-center overflow-auto"
       >
-        <div className="flex flex-col drop-shadow-md text-white text-center">
+        <div className="flex flex-col h-max drop-shadow-md text-white text-center p-4 justify-evenly">
           <h1
-            className="text-6xl md:text-7xl"
+            className="text-6xl md:text-7xl h-80"
             style={{
               textShadow:
                 "2px 2px 4px rgba(0, 0, 0, 0.5)" /* Optional text shadow for better readability */,
@@ -24,9 +24,9 @@ export default function Home() {
           >
             Pacific Northwest Cubing
           </h1>
+          <LandingPageCards />
         </div>
-        <LandingPageCards />
-      </div>
+      </section>
     </main>
   );
 }
