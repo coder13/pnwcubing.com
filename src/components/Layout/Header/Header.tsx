@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Navbar } from "flowbite-react";
+import { MegaMenu, Navbar } from "flowbite-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -26,8 +26,18 @@ const navItems = [
     openInNewTab: true,
   },
   {
-    href: "/about",
     title: "About",
+    items: [
+      {
+        href: "/about",
+        title: "About Us",
+      },
+      {
+        href: "https://drive.google.com/drive/folders/15yZiQxSOvDq65IT6lH7pg7mlmprxRFzS?usp=drive_link",
+        title: "Public Documents",
+        openInNewTab: true,
+      },
+    ],
   },
   {
     href: "/contact",
@@ -36,7 +46,7 @@ const navItems = [
 ];
 
 export function Header() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -44,38 +54,45 @@ export function Header() {
   }, [pathname]);
 
   return (
-    <Navbar className="flex shadow-md z-50 h-20 xl:[&>div]:max-w-2/3 " rounded>
-      <Navbar.Brand href="/" as={Link}>
-        <Image
-          alt="Pacific Northwest Cubing Logo"
-          src="/full.svg"
-          className="h-28 -m-6"
-          width={200}
-          height={100}
-        />
-      </Navbar.Brand>
-      <Navbar.Toggle onClick={() => setIsOpen((open) => !open)} />
-      <Navbar.Collapse className="hidden md:visible">
-        {navItems.map((nav) => (
-          <Navbar.Link
-            key={nav.href}
-            as={Link}
-            active={pathname === nav.href}
-            href={nav.href}
-            target={nav.openInNewTab ? "_blank" : undefined}
-          >
-            <p>{nav.title}</p>
-          </Navbar.Link>
-        ))}
-      </Navbar.Collapse>
-      {isOpen && (
-        <div
-          className={classNames(
-            "w-full md:w-auto md:hidden bg-white shadow-lg",
-          )}
-        >
-          <ul className="flex flex-col md:flex-row md:space-x-8 md:text-sm md:font-medium z-50 bg-white">
-            {navItems.map((nav) => (
+    <MegaMenu className="flex shadow-md z-50 xl:[&>div]:max-w-2/3 h-20">
+      <div className="mx-auto flex flex-wrap items-center justify-between w-full">
+        <Navbar.Brand href="/" as={Link}>
+          <Image
+            alt="Pacific Northwest Cubing Logo"
+            src="/full.svg"
+            className="h-28 -m-6"
+            width={200}
+            height={100}
+          />
+        </Navbar.Brand>
+        <Navbar.Toggle onClick={() => setIsOpen((open) => !open)} />
+        <Navbar.Collapse className="visible">
+          {navItems.map((nav) => {
+            if ("items" in nav && nav.items?.length) {
+              return (
+                <Navbar.Link key={nav.title}>
+                  <MegaMenu.Dropdown toggle={<>{nav.title}</>}>
+                    <ul className="grid grid-cols-1">
+                      <div className="space-y-4 p-4">
+                        {nav.items.map((item) => (
+                          <Navbar.Link
+                            key={item.href}
+                            as={Link}
+                            active={pathname === item.href}
+                            href={item.href}
+                            target={item.openInNewTab ? "_blank" : undefined}
+                          >
+                            <p>{item.title}</p>
+                          </Navbar.Link>
+                        ))}
+                      </div>
+                    </ul>
+                  </MegaMenu.Dropdown>
+                </Navbar.Link>
+              );
+            }
+
+            return (
               <Navbar.Link
                 key={nav.href}
                 as={Link}
@@ -85,10 +102,42 @@ export function Header() {
               >
                 <p>{nav.title}</p>
               </Navbar.Link>
-            ))}
-          </ul>
-        </div>
-      )}
-    </Navbar>
+            );
+          })}
+        </Navbar.Collapse>
+        {isOpen && (
+          <div
+            className={classNames(
+              "w-full md:w-auto md:hidden bg-white shadow-lg",
+            )}
+          >
+            <ul className="flex flex-col md:flex-row md:space-x-8 md:text-sm md:font-medium z-50 bg-white">
+              {navItems
+                .flatMap(
+                  (nav) =>
+                    ("items" in nav && nav.items?.length && nav.items.length > 0
+                      ? nav.items
+                      : nav) as {
+                      href: string;
+                      title: string;
+                      openInNewTab?: boolean;
+                    },
+                )
+                .map((nav) => (
+                  <Navbar.Link
+                    key={nav.href}
+                    as={Link}
+                    active={pathname === nav.href}
+                    href={nav.href}
+                    target={nav.openInNewTab ? "_blank" : undefined}
+                  >
+                    <p>{nav.title}</p>
+                  </Navbar.Link>
+                ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </MegaMenu>
   );
 }
