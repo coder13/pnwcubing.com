@@ -26,13 +26,17 @@ const navItems = [
     openInNewTab: true,
   },
   {
+    href: "/about",
+    title: "About",
+  },
+  {
     href: "/contact",
     title: "Contact",
   },
 ];
 
 export function Header() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -40,12 +44,12 @@ export function Header() {
   }, [pathname]);
 
   return (
-    <Navbar className="flex shadow-md z-50 h-20">
+    <Navbar className="flex shadow-md z-50 h-20 xl:[&>div]:max-w-2/3 " rounded>
       <Navbar.Brand href="/" as={Link}>
         <Image
           alt="Pacific Northwest Cubing Logo"
           src="/full.svg"
-          className="-m-6"
+          className="h-28 -m-6"
           width={200}
           height={100}
         />
@@ -65,8 +69,12 @@ export function Header() {
         ))}
       </Navbar.Collapse>
       {isOpen && (
-        <div className={classNames("w-full md:w-auto md:hidden")}>
-          <ul className="mt-4 flex flex-col md:mt-0 md:flex-row md:space-x-8 md:text-sm md:font-medium">
+        <div
+          className={classNames(
+            "w-full md:w-auto md:hidden bg-white shadow-lg",
+          )}
+        >
+          <ul className="flex flex-col md:flex-row md:space-x-8 md:text-sm md:font-medium z-50 bg-white">
             {navItems.map((nav) => (
               <Navbar.Link
                 key={nav.href}
