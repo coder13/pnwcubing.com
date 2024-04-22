@@ -8,6 +8,7 @@ import { APICompetition } from "@/lib/wcaApi";
 
 import { Alert } from "flowbite-react";
 import { activityCodeToName } from "@wca/helpers";
+import { formatDistance } from "date-fns/formatDistance";
 
 interface CompetitionCardProps extends APICompetition {}
 
@@ -55,15 +56,24 @@ export function CompetitionCard({
       {isRegistrationOpen ? (
         <Alert color={isRegistrationClosed ? "failure" : "success"}>
           <span className="font-medium">
-            {isRegistrationClosed
-              ? "Registration Closed!"
-              : "Registration Open!"}
+            {isRegistrationClosed ? (
+              "Registration Closed!"
+            ) : (
+              <>
+                Registration open for{" "}
+                {formatDistance(Date.now(), new Date(registration_close))}
+                <br />
+                Closes on {new Date(registration_open).toLocaleString()}
+              </>
+            )}
           </span>
         </Alert>
       ) : (
         <Alert color="info">
           <span className="font-medium">
-            Registration opens {new Date(registration_open).toLocaleString()}
+            Registration opens in{" "}
+            {formatDistance(Date.now(), new Date(registration_open))} at{" "}
+            {new Date(registration_open).toLocaleString()}
           </span>
         </Alert>
       )}

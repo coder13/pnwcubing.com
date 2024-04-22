@@ -26,7 +26,7 @@ export async function DelegateDetails({
           style={{ width: "100%", height: "auto" }}
           className="min-w-[5rem] sm:max-w-[15rem]"
         />
-        <EmailButton email={email} />
+        {email && <EmailButton email={email} />}
       </div>
       <div className="flex flex-1 flex-col mx-4">
         <p>
