@@ -33,7 +33,7 @@ const navItems = [
         title: "About Us",
       },
       {
-        href: "https://drive.google.com/drive/folders/15yZiQxSOvDq65IT6lH7pg7mlmprxRFzS?usp=drive_link",
+        href: "https://drive.google.com/drive/folders/1_8lCU2c5EOrkil0AOhS0EmhOLucsR5Ou?usp=drive_link",
         title: "Public Documents",
         openInNewTab: true,
       },
