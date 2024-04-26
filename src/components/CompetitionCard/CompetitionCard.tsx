@@ -63,7 +63,7 @@ export function CompetitionCard({
                 Registration open for{" "}
                 {formatDistance(Date.now(), new Date(registration_close))}
                 <br />
-                Closes on {new Date(registration_open).toLocaleString()}
+                Closes on {new Date(registration_close).toLocaleString()}
               </>
             )}
           </span>
