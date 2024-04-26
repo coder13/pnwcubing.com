@@ -78,9 +78,9 @@ export default function AboutCompeting() {
             We rely on volunteers for all PNW Cubing competitions. If you are
             competing, we will be asking that you help out in at least one group
             for every round you compete in. You will get these assignments at
-            the start of the day during check-in. Weapos;ll most likely ask you
-            to judge or run. Judging is very easy and we are always happy to
-            teach you!
+            the start of the day on a nametag you will get during check-in.
+            Weapos;ll most likely ask you to judge or run. Judging is very easy
+            and we are always happy to teach you!
           </p>
           <p>
             We will need much help later in the day during our final rounds of
@@ -127,12 +127,17 @@ export default function AboutCompeting() {
                     The competitor&apos;s name is <b>Chris Tabar</b>
                   </li>
                   <li>
-                    the competitor&apos;s WCA ID is <b>2017TABA02</b>
+                    The competitor&apos;s WCA ID is <b>2017TABA02</b>
                   </li>
                   <li>
-                    the competitor&apos;s ID # for the competition is <b>1</b>
+                    The competitor&apos;s ID # for the competition is <b>1</b>
                   </li>
                 </ul>
+                <p>
+                  The competitor ID is an important piece of information. It
+                  will be used as your signature when approving your solve
+                  times, when judging, and when scrambling.
+                </p>
               </div>
             </div>
             <div className="col-span-1 md:space-x-12 space-y-2 flex flex-col md:flex-row">
