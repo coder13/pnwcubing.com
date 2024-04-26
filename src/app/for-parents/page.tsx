@@ -132,12 +132,11 @@ export default function Delegates() {
                 to the stations, calling competitors to a station, and taking
                 solved cubes back to the scrambling table.
               </p>
-
+            </div>
+            <div>
               <p>
                 <b>Q</b>: My kid wants to be a scrambler, how do I help them?
               </p>
-            </div>
-            <div>
               <p>
                 <b>A</b>: Scramblers are decided by the delegate before the
                 competition begins. They are usually more experienced cubers who
@@ -146,7 +145,8 @@ export default function Delegates() {
                 at some point but I would encourage them to enjoy competing and
                 to help with judging.
               </p>
-
+            </div>
+            <div>
               <p>
                 <b>Q</b>: How fair are the scrambles and how does that work?
               </p>
