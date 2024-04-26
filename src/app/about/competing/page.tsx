@@ -47,10 +47,11 @@ export default function AboutCompeting() {
             great resource for new competitors. It&apos;s not a complete
             replacement for knowing the regulations but it&apos;s a great start.
           </p>
-          <div className="relative pb-[56.5%] h-0">
+          <div className="flex w-full justify-center items-center">
             <iframe
-              className="absolute top-0 left-0 w-full h-full"
+              className="w-full xl:w-2/3  aspect-video"
               src="https://www.youtube.com/embed/dPL3eV-A0ww"
+              loading="lazy"
             ></iframe>
           </div>
           <p>
