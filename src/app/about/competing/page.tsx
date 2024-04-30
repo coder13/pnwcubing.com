@@ -1,4 +1,9 @@
+import { Metadata } from "next";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "About Competing | pnwcubing",
+};
 
 export default function AboutCompeting() {
   return (

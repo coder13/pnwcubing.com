@@ -2,6 +2,11 @@ import { DelegateDetails } from "@/components/DelegateDetails";
 import directus, { Delegate } from "../../lib/directus";
 import { readItems } from "@directus/sdk/rest";
 import { Fragment } from "react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Delegates | pnwcubing",
+};
 
 async function getDelegates() {
   try {

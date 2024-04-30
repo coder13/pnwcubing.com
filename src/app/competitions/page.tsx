@@ -1,5 +1,10 @@
 import { CompetitionCard } from "@/components/CompetitionCard";
 import { fetchUpcomingComps } from "@/lib/wcaApi";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Competitions | pnwcubing",
+};
 
 async function getCompetitions() {
   const allComps = await Promise.all([

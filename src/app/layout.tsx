@@ -11,6 +11,8 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Pacific Northwest Cubing",
   description: "The official home to all things Pacific Northwest Cubing",
+  keywords: "pnw, cubing, speedcubing, wca, competitions",
+  metadataBase: new URL("https://www.pnwcubing.com/"),
 };
 
 export default function RootLayout({

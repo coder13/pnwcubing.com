@@ -1,6 +1,11 @@
+import { Metadata } from "next";
 import Link from "next/link";
 
-export default function Delegates() {
+export const metadata: Metadata = {
+  title: "For-Parents | pnwcubing",
+};
+
+export default function ForParents() {
   return (
     <main className="flex flex-col justify-center flex-1 leading-8">
       <section className="flex justify-center w-full px-4 space-y-4 py-4 bg-white">
