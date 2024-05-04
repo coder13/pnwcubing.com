@@ -10,6 +10,16 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/feedback",
+        destination:
+          "https://docs.google.com/forms/d/13OjyKJWGZP3UmTrPcfF5vbJGboGigyphanHj7oN8eWg",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

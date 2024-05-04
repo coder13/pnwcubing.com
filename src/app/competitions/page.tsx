@@ -38,17 +38,32 @@ export default async function Delegates() {
       </section>
 
       <section className="flex justify-center w-full px-4 space-y-4 py-4 bg-secondary bg-opacity-80">
-        <div className="flex flex-col md:w-2/3 w-full">
+        <div className="flex flex-col text-sm md:text-base md:w-2/3 w-full space-y-2">
           <p>
             The PNW has competitions all across Washington, Oregon, Alaska, BC,
             and parts of Idaho and Monatana.
           </p>
           <p>
             All competitions are open to all competitors of all ages and
-            experiences. If registration has closed for a competition, you might
-            be able to still visit it if the competition allows. Check on the
+            experiences.
+          </p>
+          <p>
+            If registration has closed for a competition, you might be able to
+            still visit it if the competition allows. Check on the
             competition&apos;s website for more information on if spectators are
             allowed.
+          </p>
+          <p>
+            If you attended one of these competitions and want to leave
+            feedback, you can do so on our{" "}
+            <a
+              href="/feedback"
+              target="_blank"
+              className="text-blue-500 underline"
+            >
+              feedback form
+            </a>
+            !
           </p>
         </div>
       </section>
