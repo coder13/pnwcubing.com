@@ -29,7 +29,7 @@ export function CompetitionCard({
 
   return (
     <a
-      className="w-full block  p-6 bg-white border border-gray-200 rounded-lg drop-shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 hover:drop-shadow-md transition-all duration-150"
+      className="w-full block p-6 bg-white border border-gray-200 rounded-lg drop-shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 hover:drop-shadow-md transition-all duration-150"
       href={url}
       target="_blank"
     >
