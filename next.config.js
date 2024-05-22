@@ -18,6 +18,11 @@ const nextConfig = {
           "https://docs.google.com/forms/d/13OjyKJWGZP3UmTrPcfF5vbJGboGigyphanHj7oN8eWg",
         permanent: true,
       },
+      {
+        source: "/uploads/1/9/8/7/19877007/editor/pnwcubing-transparent-01.png",
+        destination: "/images/full_white.png",
+        permanent: false,
+      },
     ];
   },
 };
