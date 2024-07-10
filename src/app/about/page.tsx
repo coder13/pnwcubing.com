@@ -27,8 +27,8 @@ export default function About() {
           <h5 className="font-bold text-lg py-1">Board of Directors</h5>
           <ul className="flex flex-col px-4">
             <li className="list-disc">Cailyn Hoover - Chair</li>
-            <li className="list-disc">Chris Tabar - Treasurer</li>
             <li className="list-disc">Matthew Dickman - Secretary</li>
+            <li className="list-disc">Sonja Black</li>
           </ul>
         </div>
       </section>
