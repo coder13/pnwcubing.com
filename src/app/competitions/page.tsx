@@ -73,7 +73,7 @@ export default async function Delegates() {
           <div className="flex flex-col w-full space-y-4 pb-12">
             <div className="bg-blue-200 drop-shadow border-2 rounded-md p-6">
               We are very proud to share that CubingUSA has chosen Seattle as
-              the location for <b>World Championship 2024</b>! Learn more on{" "}
+              the location for <b>World Championship 2025</b>! Learn more on{" "}
               <a
                 href="https://cubingusa.org/worlds/"
                 target="_blank"
