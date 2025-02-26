@@ -21,11 +21,6 @@ const navItems = [
     title: "For Parents",
   },
   {
-    href: "https://merch.pnwcubing.com/",
-    title: "Merchandise",
-    openInNewTab: true,
-  },
-  {
     title: "About",
     items: [
       {
