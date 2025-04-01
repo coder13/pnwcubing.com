@@ -7,7 +7,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import classNames from "classnames";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  title: string;
+  openInNewTab?: boolean;
+  items?: NavItem[];
+}
+
+const navItems: NavItem[] = [
   {
     href: "/competitions",
     title: "Competitions",
