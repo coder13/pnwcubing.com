@@ -21,11 +21,11 @@ export default function Contact() {
               to reach out to us at{" "}
               <a
                 className="text-primary hover:underline"
-                href="mailto:support@pnwcubing.com"
+                href="mailto:contact@pnwcubing.com"
                 target="_blank"
                 rel="noreferrer"
               >
-                support@pnwcubing.com
+                contact@pnwcubing.com
               </a>
             </p>
           </div>
