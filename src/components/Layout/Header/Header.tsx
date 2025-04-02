@@ -12,7 +12,7 @@ type NavItem = {
   title: string;
   openInNewTab?: boolean;
   items?: NavItem[];
-}
+};
 
 const navItems: NavItem[] = [
   {
