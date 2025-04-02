@@ -26,7 +26,7 @@ export default function About() {
           <h4 className="text-2xl py-2">Our Team</h4>
           <h5 className="font-bold text-lg py-1">Board of Directors</h5>
           <ul className="flex flex-col px-4">
-            <li className="list-disc">Cailyn Hoover - Chair</li>
+            <li className="list-disc">Cailyn Sinclair - Chair</li>
             <li className="list-disc">Matthew Dickman - Secretary</li>
             <li className="list-disc">Sonja Black</li>
           </ul>
