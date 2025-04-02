@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import classNames from "classnames";
 
 type NavItem = {
-  href: string;
+  href?: string;
   title: string;
   openInNewTab?: boolean;
   items?: NavItem[];
