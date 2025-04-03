@@ -22,13 +22,14 @@ export const revalidate = 5; // revalidate api every 5 seconds
 export default async function Delegates() {
   const delegates = await getDelegates();
 
-  const delegatesGroupedByRegion = delegates.reduce(
-    (acc, d) => ({
-      ...acc,
-      [d.region]: [...(acc[d.region] || []), d],
-    }),
-    {} as Record<string, Delegate[]>,
-  );
+  const delegatesGroupedByRegion =
+    delegates?.reduce(
+      (acc, d) => ({
+        ...acc,
+        [d.region]: [...(acc[d.region] || []), d],
+      }),
+      {} as Record<string, Delegate[]>,
+    ) || [];
 
   return (
     <main className="flex flex-col flex-1 h-full">
