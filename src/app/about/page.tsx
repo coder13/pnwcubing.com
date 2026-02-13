@@ -28,7 +28,8 @@ export default function About() {
           <ul className="flex flex-col px-4">
             <li className="list-disc">Cailyn Sinclair - Chair</li>
             <li className="list-disc">Matthew Dickman - Secretary</li>
-            <li className="list-disc">Sonja Black</li>
+            <li className="list-disc">Sonja Black - Treasurer</li>
+            <li className="list-disc">Tripp Peters</li>
           </ul>
         </div>
       </section>
