@@ -6,20 +6,36 @@ export const metadata: Metadata = {
   title: "Competitions | pnwcubing",
 };
 
+const ALLOWED_REGIONS = [
+  "Washington",
+  "Oregon",
+  "Alaska",
+  "British Columbia",
+  "Idaho",
+  "Montana",
+];
+
 async function getCompetitions() {
   const allComps = await Promise.all([
-    fetchUpcomingComps("alaska"),
     fetchUpcomingComps("washington"),
     fetchUpcomingComps("oregon"),
+    fetchUpcomingComps("alaska"),
     fetchUpcomingComps("British Columbia"),
-    fetchUpcomingComps("sandpoint"),
-    fetchUpcomingComps("missoula"),
+    fetchUpcomingComps("idaho"),
+    fetchUpcomingComps("montana"),
     fetchUpcomingComps("NorthwestFMCChampionship"),
   ]);
 
+  // comp.city in form of "Seattle, Washington", match on state
+  // FMCChamps has city "Multiple Cities", requires exception
   return allComps
-    .reduce((a, b) => [...a, ...b], [])
-    .filter((comp) => !comp.city.includes("District of Columbia"))
+    .flat()
+    .filter(
+      (comp) =>
+        ALLOWED_REGIONS.some(
+          (region) => comp.city.split(", ").at(-1) === region,
+        ) || comp.id.startsWith("NorthwestFMCChampionship"),
+    )
     .sort(
       (a, b) =>
         new Date(a.start_date).getTime() - new Date(b.start_date).getTime(),
