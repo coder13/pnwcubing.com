@@ -6,19 +6,36 @@ export const metadata: Metadata = {
   title: "Competitions | pnwcubing",
 };
 
+const ALLOWED_REGIONS = [
+  "Washington",
+  "Oregon",
+  "Alaska",
+  "British Columbia",
+  "Idaho",
+  "Montana",
+];
+
 async function getCompetitions() {
   const allComps = await Promise.all([
-    fetchUpcomingComps("alaska"),
     fetchUpcomingComps("washington"),
     fetchUpcomingComps("oregon"),
+    fetchUpcomingComps("alaska"),
     fetchUpcomingComps("British Columbia"),
-    fetchUpcomingComps("sandpoint"),
-    fetchUpcomingComps("missoula"),
+    fetchUpcomingComps("idaho"),
+    fetchUpcomingComps("montana"),
     fetchUpcomingComps("NorthwestFMCChampionship"),
   ]);
 
+  // comp.city in form of "Seattle, Washington", match on state
+  // FMCChamps has city "Multiple Cities", requires exception
   return allComps
-    .reduce((a, b) => [...a, ...b], [])
+    .flat()
+    .filter(
+      (comp) =>
+        ALLOWED_REGIONS.some(
+          (region) => comp.city.split(", ").at(-1) === region,
+        ) || comp.id.startsWith("NorthwestFMCChampionship"),
+    )
     .sort(
       (a, b) =>
         new Date(a.start_date).getTime() - new Date(b.start_date).getTime(),
@@ -71,18 +88,6 @@ export default async function Delegates() {
       <section className="flex justify-center w-full px-4 space-y-4 py-4 bg-white">
         <div className="flex flex-col md:w-2/3 w-full">
           <div className="flex flex-col w-full space-y-4 pb-12">
-            <div className="bg-blue-200 drop-shadow border-2 rounded-md p-6">
-              We are very proud to share that CubingUSA has chosen Seattle as
-              the location for <b>World Championship 2025</b>! Learn more on{" "}
-              <a
-                href="https://cubingusa.org/worlds/"
-                target="_blank"
-                className="text-blue-500 underline"
-              >
-                their official website
-              </a>
-              .
-            </div>
             {competitions.map((competition) => (
               <CompetitionCard key={competition.id} {...competition} />
             ))}
