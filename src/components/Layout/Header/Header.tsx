@@ -45,6 +45,11 @@ const navItems: NavItem[] = [
     href: "/contact",
     title: "Contact",
   },
+  {
+    href: "https://speedcubeshop.com/collections/pacific-northwest-cubing-collection",
+    title: "Merch",
+    openInNewTab: true,
+  },
 ];
 
 export function Header() {
