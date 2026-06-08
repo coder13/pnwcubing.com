@@ -28,6 +28,11 @@ const navItems: NavItem[] = [
     title: "For Parents",
   },
   {
+    href: "https://speedcubeshop.com/collections/pacific-northwest-cubing-collection",
+    title: "Merch",
+    openInNewTab: true,
+  },
+  {
     title: "About",
     items: [
       {
