@@ -9,6 +9,8 @@ export interface Delegate {
   description: string;
   date_updated: string;
   wcaId: string;
+  status: "draft" | "published" | "hidden";
+  sort: number;
 }
 
 export interface Schema {

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Node 24 supports the sanitizer's CommonJS-to-ESM parser import.
+  experimental: { esmExternals: "loose" },
   images: {
     domains: ["avatars.worldcubeassociation.org"],
     minimumCacheTTL: 600,

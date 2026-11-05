@@ -18,3 +18,7 @@ Useful checks:
 yarn lint
 yarn build
 ```
+
+## Content editing
+
+See [the content editor guide](docs/content-editor.md) for WCA login, Directus setup, editor access, and deployment settings.

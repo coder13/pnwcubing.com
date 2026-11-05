@@ -12,6 +12,14 @@ import { formatDistance } from "date-fns/formatDistance";
 
 interface CompetitionCardProps extends APICompetition {}
 
+function eventName(eventId: string) {
+  try {
+    return activityCodeToName(eventId);
+  } catch {
+    return eventId;
+  }
+}
+
 export function CompetitionCard({
   city,
   name,
@@ -48,7 +56,7 @@ export function CompetitionCard({
             <i
               key={eventId}
               className={`text-lg cubing-icon event-${eventId}`}
-              aria-label={activityCodeToName(eventId)}
+              aria-label={eventName(eventId)}
             />
           ))}
         </span>

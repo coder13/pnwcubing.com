@@ -1,0 +1,142 @@
+[
+  {
+    "id": "about.1",
+    "label": "Heading",
+    "page": "about",
+    "body": "<h1 class=\"text-4xl\">About</h1>",
+    "status": "published"
+  },
+  {
+    "id": "about.2",
+    "label": "Introduction",
+    "page": "about",
+    "body": "<div><b>PNW Cubing</b> is a 501(c)(3) non-profit organization that aims to promote the sport of speedcubing in the Pacific Northwest. We host WCA-sanctioned competitions to support and grow the community.</div>",
+    "status": "published"
+  },
+  {
+    "id": "about.3",
+    "label": "Team",
+    "page": "about",
+    "body": "<h4 class=\"text-2xl py-2\">Our Team</h4><h5 class=\"font-bold text-lg py-1\">Board of Directors</h5><ul class=\"flex flex-col px-4\"><li class=\"list-disc\">Cailyn Sinclair - Chair</li><li class=\"list-disc\">Matthew Dickman - Secretary</li><li class=\"list-disc\">Sonja Black - Treasurer</li><li class=\"list-disc\">Tripp Peters</li></ul>",
+    "status": "published"
+  },
+  {
+    "id": "contact.1",
+    "label": "Contact page",
+    "page": "contact",
+    "body": "<div><h1 class=\"text-4xl\">Contact</h1><p>Get in touch with us</p></div><div><h2 class=\"text-2xl\">Have a quick question?</h2><p>If you have any questions, comments, or concerns, please feel free to reach out to us at <a class=\"text-primary hover:underline\" href=\"mailto:contact@pnwcubing.com\" target=\"_blank\" rel=\"noreferrer\">contact@pnwcubing.com</a></p></div><div><h2 class=\"text-2xl\">Want to organize a competition?</h2><p>Competitions are not centrally organized and are rather organized by individuals willing to help</p><p>If you are interested in organizing a competition, please check out our <a class=\"text-primary hover:underline\" href=\"/delegates\">Delegates</a>, identify your local delegate and reach out to them.</p></div>",
+    "status": "published"
+  },
+  {
+    "id": "parents.1",
+    "label": "Heading",
+    "page": "parents",
+    "body": "<h1 class=\"text-4xl\">For Parents</h1><p>Everything on this page was written by parents, for parents</p>",
+    "status": "published"
+  },
+  {
+    "id": "parents.2",
+    "label": "Introduction",
+    "page": "parents",
+    "body": "<div></div><div class=\"leading-7\"><p>My name is Joylyn Davis and my oldest son, Ethan, has been going to speedcubing competitions for about 3 years now. We have been to over <b>50</b> competitions to date and I am here to answer any questions you may have about the community overall, competitions, and anything else that you can think of. We found competitions through YouTube videos and Ethan really wanted to go to one. When we arrived we didn&apos;t know what to expect. I was worried that my introverted child would melt and this would be a horrible social experience. Instead what we found was a group of people who were very welcoming and supportive. We ended up staying the entire day just so that he could talk with other cubers and hang out. I saw my son talk and laugh with people he had just met. I have decided to try and support this community in whatever way I can because of all that they have given to our family.</p></div>",
+    "status": "published"
+  },
+  {
+    "id": "parents.3",
+    "label": "Parent FAQ",
+    "page": "parents",
+    "body": "<div class=\"space-y-4 \"><h2 class=\"text-2xl font-semibold\">Parent FAQ</h2><div><p><b>Q</b>: My kid&apos;s times are not that great, should we go to a competition?</p><p><b>A</b>: Yes. A big part of the comps is the social aspect that takes place in between their competing. That is when they learn new techniques and hear about different types of cubes and make friends.</p></div><div><p><b>Q</b>: My kid is really not social and super introverted. I am worried there will be way too many people and they will hate it.</p><p><b>A</b>: A good 90% of the other people (parents included) at that comps will also be introverted and not fond of social situations. That all changes when they come together to talk about cubes and cubing.</p></div><div><p><b>Q</b>: Why does my kid want to get to the competition so early?</p><p><b>A</b>: It may be that they are just super excited. It may also be so that they can get a spot at a table so that they can practice before they compete. As a parent you and other spectators should try to leave the table spots for the competitors. At every competition there are chairs for spectators and that is the best place for you to sit.</p></div><div><p><b>Q</b>: Can I drop my kid off at the competition and come back later?</p><p><b>A</b>: The delegate and organizer(s) are not responsible for keeping track of minors during the competition. I would say if you drove with your kid then you should stay with them. Yes, you can run out for a short time and come back. A competitor can be disqualified and asked to leave the venue for bad behavior. This can also lead to the competitor being banned from competing for a period of time.</p></div><div><p><b>Q</b>: Who is in charge of a competition?</p><p><b>A</b>: There is always at least one WCA (World Cube Association) delegate present. They make final decisions on things like +2 or if someone gets an additional solve. They are also the ones who pass on the official results to the WCA so that stats and records are official. There is also an organizer. At times the delegate and organizer is the same person. Both will have a lot of information about the event and are a great resource. If you would like to familiarize yourself with the local delegates, you can do so on the <a href=\"/delegates\" class=\"underline\">Delegates</a> tab!</p></div><div><p><b>Q</b>: How can I help at a comp when I don&apos;t know how to solve a cube?</p><p><b>A</b>: There are a couple of different ways that anyone can help. The first is to go up and help judge. During the first rounds there are competitors assigned to help and judge but later rounds do not have anyone assigned. This is a great way to help keep the competition running on time. There is always a judging tutorial and you can always ask someone to walk you through what you need to do. You can also help by being a runner. This is more for those who have been to a few competitions and understand the basics of what goes on. There are also fewer runners needed than judges. This involves taking unsolved cubes to the scrambling table, taking scrambled cubes to the stations, calling competitors to a station, and taking solved cubes back to the scrambling table.</p></div><div><p><b>Q</b>: My kid wants to be a scrambler, how do I help them?</p><p><b>A</b>: Scramblers are decided by the delegate before the competition begins. They are usually more experienced cubers who have been to several competitions and are known to be reliable and fast. This is something that your cuber may be asked to do at some point but I would encourage them to enjoy competing and to help with judging.</p></div><div><p><b>Q</b>: How fair are the scrambles and how does that work?</p><p><b>A</b>: Scrambles are generated randomly from a piece of software. Everyone in the same group will get the same scrambles. Also every round has different scrambles so that there are no repeat scrambles throughout the competition. The delegate does not even look at the scrambles in advance because they also often are competing as well.</p></div></div>",
+    "status": "published"
+  },
+  {
+    "id": "competing.1",
+    "label": "Heading",
+    "page": "competing",
+    "body": "<h1 class=\"text-4xl\">PNW Competitions</h1>",
+    "status": "published"
+  },
+  {
+    "id": "competing.2",
+    "label": "Welcome",
+    "page": "competing",
+    "body": "<p>For those of you new to cubing, <b>WELCOME!</b> We&apos;re excited to have you join us in the world of speedcubing. Our competitions have historically been an amazing space for people of all ages to come together and meet with like-minded individuals.</p><p>You&apos;re likely here because you are either looking to join a competition, have already registered, or want to come spectate. In either case we&apos;re excited to have you join us!</p><p>Below you&apos;ll find information on attending and competing at WCA sanctioned competitions.</p>",
+    "status": "published"
+  },
+  {
+    "id": "competing.3",
+    "label": "First competition",
+    "page": "competing",
+    "body": "<p>First, please be familiar with the <a class=\"text-blue-500 underline\" href=\"https://www.worldcubeassociation.org/regulations/\" target=\"_blank\">WCA Regulations</a>. Do not at all fee pressured to memorize these, but it is good to be familiar with them.</p><p>All PNW competitions will have new competitor / judging tutorial but if you&apos;re looking for something to watch ahead of time, Kit Clement has a video tutorial for competing at competitions that is a great resource for new competitors. It&apos;s not a complete replacement for knowing the regulations but it&apos;s a great start.</p><div class=\"flex w-full justify-center items-center\"><iframe class=\"w-full xl:w-2/3  aspect-video\" src=\"https://www.youtube.com/embed/dPL3eV-A0ww\" loading=\"lazy\"></iframe></div><p>If you have any questions after this video, the tutorial at competitions will be the perfect time to ask those questions and clear up any confusion.</p><p>If you are stoked to compete and ready to sign up, head back over to the competition page and on the registration tab, click register, and fill out the information it asks for. This will help you get set up the WCA&apos;s system and one step closer to your first official solve!</p>",
+    "status": "published"
+  },
+  {
+    "id": "competing.4",
+    "label": "Responsibilities",
+    "page": "competing",
+    "body": "<h2 id=\"Responsiblities\" class=\"text-2xl font-bold\">Responsiblities</h2><p>We rely on volunteers for all PNW Cubing competitions. If you are competing, we will be asking that you help out in at least one group for every round you compete in. You will get these assignments at the start of the day on a nametag you will get during check-in. Weapos;ll most likely ask you to judge or run. Judging is very easy and we are always happy to teach you!</p><p>We will need much help later in the day during our final rounds of events. Spectators are encouraged to learn how to judge; you do not need to know how to cube in order to be a judge. Having enough judges ensures that we stay on schedule and are able to leave on time.</p><p>If we assign you to judge, run, or scramble, we ask that you fulfill these assignments throughout the day so that the competition can stay on time and everyone can have fun. if you are not able to make it to certain assignments, please let a delegate know, we&apos;re always happy to accomodate. If you have any questions or concerns, please reach out to us!</p>",
+    "status": "published"
+  },
+  {
+    "id": "competing.5",
+    "label": "Nametags",
+    "page": "competing",
+    "body": "<h2 id=\"nametag\" class=\"text-2xl font-bold w-full\">Nametags</h2><p>Upon checking in, you will receive a nametag and lanyard for holding your nametag. Your nametag will contain a lot of very important information that will help guide you through your day as a competitor. While the exact nametag you receive will differ from the one shown below, the general format and information should be similar.</p><div class=\"flex flex-col sm:gap-2 w-full\"><div class=\"col-span-1 md:space-x-12 space-y-2 flex flex-col md:flex-row\"><img src=\"/images/nametag_front.png\" alt=\"Nametag Front\" width=\"240\" height=\"480\"><div class=\"p-2\"><p>On the front, we see:</p><ul><li>The competitor&apos;s name is <b>Chris Tabar</b></li><li>The competitor&apos;s WCA ID is <b>2017TABA02</b></li><li>The competitor&apos;s ID # for the competition is <b>1</b></li></ul><p>The competitor ID is an important piece of information. It will be used as your signature when approving your solve times, when judging, and when scrambling.</p></div></div><div class=\"col-span-1 md:space-x-12 space-y-2 flex flex-col md:flex-row\"><img src=\"/images/nametag_back.png\" alt=\"Nametag Back\" width=\"240\" height=\"480\" class=\"h-[480px]\"><div class=\"p-2\"><p>On the back, we see:</p><ul><li class=\"list-item list-disc\"><b>Event</b> - the actual event, such as 3x3, 2x2, etc. Compete</li><li class=\"list-item list-disc\"><b>Compete</b>- This is the one you care about most! The information in this column tells you which stage or room you&apos;re competing in and which group, usually with the first letter of the name of the stage or room, such as (B) for Blue. If the competition has only one stage or room, there may just be a number in this column.</li><li class=\"list-item list-disc\"><b>Help</b> - This column tells you when you are assigned to a job helping with the competition. The first letter tells you the job you&apos;ll be doing - (J) for Judging, (R) for Running, (S) for Scrambling, the number tells you which group you&apos;ll be helping with.</li></ul><p>For example:</p><p>In the first column, If you see <b>B</b>1, then you are competing on the blue stage for group 1.<br>If you see a <b>J</b>2, this means you are judging for group 2</p></div></div></div>",
+    "status": "published"
+  },
+  {
+    "id": "competing.6",
+    "label": "Resources",
+    "page": "competing",
+    "body": "<h2 id=\"FAQ\" class=\"text-2xl font-bold\">Resources</h2><p>We use a couple of websites to help us communicate information with you when you compete at competitions</p><ul class=\"p-2\"><li class=\"list-disc\"><a href=\"https://www.competitiongroups.com/\" target=\"_blank\" class=\"text-blue-500 underline\">Competition Groups</a> - Our website for communicating groups information like an advanced version of your nametag that updates as the competition progresses</li><li class=\"list-disc\"><a href=\"https://live.worldcubeassociation.org/\" target=\"_blank\" class=\"text-blue-500 underline\">WCA-Live</a> - A website where you can view your results for each competition as they come in.</li></ul>",
+    "status": "published"
+  },
+  {
+    "id": "competing.7",
+    "label": "FAQ heading",
+    "page": "competing",
+    "body": "<h2 id=\"FAQ\" class=\"text-2xl font-bold\">Frequently Asked Questions</h2>",
+    "status": "published"
+  },
+  {
+    "id": "delegates.1",
+    "label": "Heading",
+    "page": "delegates",
+    "body": "<h2 class=\"text-4xl\">Delegates</h2>",
+    "status": "published"
+  },
+  {
+    "id": "delegates.2",
+    "label": "Introduction",
+    "page": "delegates",
+    "body": "<div class=\"space-y-1\"><p class=\"font-bold\">What Does a Delegate do?</p><p>Delegates are the officials of the WCA, and they are responsible for ensuring the WCA Regulations are followed during the competition. They also handle incidents and are responsible for scrambles and results. If you ever have any doubts or questions, they should be your first choice for asking.</p><p class=\"font-bold\">Get to Know Your Local Delegates</p><p>Below you can find your local delegates in Oregon, Washington and British Columbia! Unfortunately, all other PNW states do not have a delegate, however these delegates are willing to travel under the right circumstances! If you are interesting in organizing your own competition, feel free to contact one or multiple of your local delegates letting them know of your interest.</p></div>",
+    "status": "published"
+  },
+  {
+    "id": "competitions.1",
+    "label": "Heading",
+    "page": "competitions",
+    "body": "<h2 class=\"text-4xl\">Upcoming Competitions</h2>",
+    "status": "published"
+  },
+  {
+    "id": "competitions.2",
+    "label": "Introduction",
+    "page": "competitions",
+    "body": "<p>The PNW has competitions all across Washington, Oregon, Alaska, BC, and parts of Idaho and Monatana.</p><p>All competitions are open to all competitors of all ages and experiences.</p><p>If registration has closed for a competition, you might be able to still visit it if the competition allows. Check on the competition&apos;s website for more information on if spectators are allowed.</p><p>If you attended one of these competitions and want to leave feedback, you can do so on our <a href=\"/feedback\" target=\"_blank\" class=\"text-blue-500 underline\">feedback form</a>!</p>",
+    "status": "published"
+  },
+  {
+    "id": "home.cards",
+    "label": "Home cards",
+    "page": "home",
+    "body": "<div class=\"grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8\"><a href=\"/competitions\" class=\"flex flex-col gap-4 rounded-lg bg-white p-6 text-left shadow-md\"><h2 class=\"text-lg md:text-2xl font-bold text-gray-900\">Competitions</h2><p class=\"text-sm md:text-base text-gray-700\">We host competitions throughout the year. Check out our upcoming competitions and past results.</p><span class=\"rounded bg-primary px-4 py-2 text-white\">View Competitions</span></a><a href=\"https://www.facebook.com/groups/pnwcubing\" class=\"flex flex-col gap-4 rounded-lg bg-white p-6 text-left shadow-md\"><h2 class=\"text-lg md:text-2xl font-bold text-gray-900\">PNW Cubing Facebook Group</h2><p class=\"text-sm md:text-base text-gray-700\">If you or a parent have a Facebook account, we’d highly recommend joining our Facebook group to hear about competitions in the Pacific Northwest before they’re announced and keep in touch with cubers in the area.</p><span class=\"rounded bg-primary px-4 py-2 text-white\">Join Group</span></a><a href=\"http://eepurl.com/h3T0EL\" class=\"flex flex-col gap-4 rounded-lg bg-white p-6 text-left shadow-md\"><h2 class=\"text-lg md:text-2xl font-bold text-gray-900\">Subscribe to the PNW Monthly Newsletter!</h2><p class=\"text-sm md:text-base text-gray-700\">Your email will not be distributed to anyone. It will only be used for the PNW Monthly Newsletter.</p><span class=\"rounded bg-primary px-4 py-2 text-white\">Subscribe</span></a></div>",
+    "status": "published"
+  },
+  {
+    "id": "home.title",
+    "label": "Home title",
+    "page": "home",
+    "body": "Pacific Northwest Cubing",
+    "status": "published"
+  }
+]
