@@ -24,12 +24,43 @@ async function api<T = unknown>(
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     signal: AbortSignal.timeout(30000),
   });
-  if (!response.ok)
+  if (!response.ok) {
+    const field =
+      path.startsWith("/fields/") &&
+      body &&
+      typeof body === "object" &&
+      "field" in body
+        ? ` (field ${String(body.field)})`
+        : "";
+    const details: string[] = [];
+    try {
+      const payload = await response.json();
+      for (const error of Array.isArray(payload.errors) ? payload.errors : []) {
+        const code =
+          typeof error.extensions?.code === "string"
+            ? `[${error.extensions.code}] `
+            : "";
+        if (typeof error.message === "string")
+          details.push(`${code}${error.message}`);
+      }
+    } catch {
+      /* Some proxies return HTML instead of a Directus error. */
+    }
+    let detail = details.join(" ").replace(/\s+/g, " ");
+    for (const secret of [
+      token,
+      process.env.DIRECTUS_TOKEN,
+      process.env.WCA_CLIENT_SECRET,
+      process.env.SESSION_SECRET,
+    ]) {
+      if (secret) detail = detail.replaceAll(secret, "[redacted]");
+    }
     throw new Error(
       `Directus returned ${response.status} for ${method} ${
         path.split("?")[0]
-      }.`,
+      }${field}.${detail ? ` ${detail.slice(0, 1500)}` : ""}`,
     );
+  }
   return response.status === 204
     ? (undefined as T)
     : (await response.json()).data;
@@ -81,11 +112,103 @@ const sort: Field = {
   meta: { interface: "input" },
 };
 
+type Collection = {
+  collection: string;
+  schema?: object | null;
+  meta?: { singleton?: boolean } | null;
+};
+
+const definitions = [
+  {
+    collection: "Delegates",
+    fields: [publication, sort],
+    note: "Delegate profiles. The website publishes only published records.",
+  },
+  {
+    collection: "FAQ",
+    fields: [
+      primary(true),
+      text("question"),
+      text("answer", "text"),
+      publication,
+      sort,
+    ],
+    note: "Competition FAQ questions.",
+  },
+  {
+    collection: "SiteContent",
+    fields: [primary(false, "string"), text("body", "text"), publication],
+    note: "Website sections. Keep the existing IDs.",
+  },
+  {
+    collection: "SiteEditors",
+    fields: [
+      primary(false),
+      text("name"),
+      {
+        field: "active",
+        type: "boolean",
+        schema: { default_value: true },
+        meta: { interface: "boolean" },
+      },
+    ],
+    note: "Full website editors. The ID is a numeric WCA user ID.",
+  },
+];
+
+function validateExistingCollection(
+  collection: Collection,
+  fields: Field[],
+  expected: Field[],
+) {
+  if (collection.schema === null)
+    throw new Error(
+      `${collection.collection} is a collection folder, not a database table. Setup stopped before changing permissions.`,
+    );
+  if (collection.meta?.singleton)
+    throw new Error(
+      `${collection.collection} is a singleton. The website needs a collection with multiple records. Setup stopped before changing permissions.`,
+    );
+  for (const field of expected) {
+    const existing = fields.find(
+      (value) => value.field.toLowerCase() === field.field.toLowerCase(),
+    );
+    if (!existing) {
+      if (field.schema?.is_primary_key)
+        throw new Error(
+          `${collection.collection} has no ${field.field} primary key. Setup will not add or replace an existing primary key. Setup stopped before changing permissions.`,
+        );
+      continue;
+    }
+    if (existing.field !== field.field)
+      throw new Error(
+        `${collection.collection}.${existing.field} conflicts with the required field ${field.field}. Field names are case-sensitive in the website. Setup stopped before changing permissions.`,
+      );
+    const stringTypes = ["string", "text"];
+    if (
+      existing.type !== field.type &&
+      !(stringTypes.includes(existing.type) && stringTypes.includes(field.type))
+    ) {
+      throw new Error(
+        `${collection.collection}.${field.field} has type ${existing.type}, but the website expects ${field.type}. Setup will not change existing field types. Setup stopped before changing permissions.`,
+      );
+    }
+    if (
+      field.schema?.is_primary_key &&
+      existing.schema?.is_primary_key !== true
+    )
+      throw new Error(
+        `${collection.collection}.${field.field} is not the primary key. Setup stopped before changing permissions.`,
+      );
+  }
+}
+
 async function ensureCollection(
   collection: string,
   fields: Field[],
   note: string,
   existing: Set<string>,
+  current: Field[] = [],
 ) {
   if (!existing.has(collection)) {
     await api("/collections", "POST", {
@@ -96,9 +219,9 @@ async function ensureCollection(
     });
     console.log(`Created ${collection}.`);
   } else {
-    const current = await api<Field[]>(`/fields/${collection}`);
     for (const field of fields) {
       if (!current.some((value) => value.field === field.field)) {
+        console.log(`Adding ${collection}.${field.field} (${field.type}).`);
         await api(`/fields/${collection}`, "POST", field);
         console.log(`Added ${collection}.${field.field}.`);
       }
@@ -106,17 +229,53 @@ async function ensureCollection(
   }
 }
 
-export async function setupCms() {
-  const collections = new Set(
-    (await api<{ collection: string }[]>("/collections")).map(
-      (item) => item.collection,
-    ),
-  );
+export async function setupCms({ checkOnly = false } = {}) {
+  const collectionList = await api<Collection[]>("/collections");
+  const collections = new Set(collectionList.map((item) => item.collection));
   if (!collections.has("Delegates"))
     throw new Error(
       "The existing Delegates collection was not found. No changes were made.",
     );
-  const delegateFields = await api<Field[]>("/fields/Delegates");
+  const fieldsByCollection = new Map<string, Field[]>();
+  // Read every existing collection before any schema or permission mutation.
+  for (const { collection } of definitions) {
+    if (!collections.has(collection)) {
+      if (checkOnly)
+        console.log(`${collection}: will create a new collection.`);
+      continue;
+    }
+    const fields = await api<Field[]>(`/fields/${collection}`);
+    fieldsByCollection.set(collection, fields);
+    if (checkOnly)
+      console.log(
+        `${collection}: ${
+          fields
+            .map(
+              (field) =>
+                `${field.field}:${field.type}${
+                  field.schema?.is_primary_key ? " (primary key)" : ""
+                }`,
+            )
+            .join(", ") || "no fields"
+        }`,
+      );
+  }
+  for (const { collection, fields } of definitions) {
+    const existing = collectionList.find(
+      (item) => item.collection === collection,
+    );
+    if (existing)
+      validateExistingCollection(
+        existing,
+        fieldsByCollection.get(collection)!,
+        fields,
+      );
+  }
+  if (checkOnly) {
+    console.log("Schema check passed. No changes were made.");
+    return;
+  }
+  const delegateFields = fieldsByCollection.get("Delegates")!;
   const needsStatus = !delegateFields.some((field) => field.field === "status");
   const legacyDelegates = needsStatus
     ? await api<{ id: string }[]>("/items/Delegates?limit=-1&fields=id")
@@ -160,11 +319,13 @@ export async function setupCms() {
     console.log(`Removed anonymous access to ${permission.collection}.`);
   }
 
+  const delegatesDefinition = definitions[0];
   await ensureCollection(
     "Delegates",
-    [publication, sort],
-    "Delegate profiles. The website publishes only published records.",
+    delegatesDefinition.fields,
+    delegatesDefinition.note,
     collections,
+    delegateFields,
   );
   for (const delegate of legacyDelegates) {
     await api(
@@ -173,39 +334,15 @@ export async function setupCms() {
       { status: "published" },
     );
   }
-  await ensureCollection(
-    "FAQ",
-    [
-      primary(true),
-      text("question"),
-      text("answer", "text"),
-      publication,
-      sort,
-    ],
-    "Competition FAQ questions.",
-    collections,
-  );
-  await ensureCollection(
-    "SiteContent",
-    [primary(false, "string"), text("body", "text"), publication],
-    "Website sections. Keep the existing IDs.",
-    collections,
-  );
-  await ensureCollection(
-    "SiteEditors",
-    [
-      primary(false),
-      text("name"),
-      {
-        field: "active",
-        type: "boolean",
-        schema: { default_value: true },
-        meta: { interface: "boolean" },
-      },
-    ],
-    "Full website editors. The ID is a numeric WCA user ID.",
-    collections,
-  );
+  for (const { collection, fields, note } of definitions.slice(1)) {
+    await ensureCollection(
+      collection,
+      fields,
+      note,
+      collections,
+      fieldsByCollection.get(collection),
+    );
+  }
 
   const existingContent = new Set(
     (await api<{ id: string }[]>("/items/SiteContent?limit=-1&fields=id")).map(
@@ -247,7 +384,7 @@ export async function setupCms() {
 }
 
 if (require.main === module) {
-  setupCms().catch((error) => {
+  setupCms({ checkOnly: process.argv.includes("--check") }).catch((error) => {
     console.error(error.message);
     process.exitCode = 1;
   });
