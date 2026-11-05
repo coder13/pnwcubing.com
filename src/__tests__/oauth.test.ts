@@ -26,9 +26,11 @@ process.env.WCA_CLIENT_ID = "test-client";
 process.env.WCA_CLIENT_SECRET = "test-secret";
 process.env.SESSION_SECRET = "a-test-secret-with-more-than-32-characters";
 process.env.DIRECTUS_TOKEN = "test-service-token";
+process.env.CONTENT_EDITOR_WCA_IDS = "";
 const originalFetch = global.fetch;
 afterEach(() => {
   global.fetch = originalFetch;
+  process.env.CONTENT_EDITOR_WCA_IDS = "";
 });
 function context<T>(cookie: string, fn: () => T): T {
   return requestAsyncStorage.run(
@@ -59,6 +61,7 @@ async function startLogin() {
 }
 
 test("WCA code flow verifies state and PKCE and stores a private session", async () => {
+  process.env.CONTENT_EDITOR_WCA_IDS = "8184";
   const { cookie, state } = await startLogin();
   global.fetch = async (url, init) => {
     if (String(url).endsWith("/oauth/token")) {

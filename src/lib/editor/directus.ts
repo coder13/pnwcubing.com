@@ -1,4 +1,11 @@
 import { requiredEnv } from "./config";
+import {
+  decodeFaqItem,
+  encodeFaqItem,
+  faqFieldMapId,
+  parseFaqFieldMap,
+  resolveFaqFields,
+} from "./faqFields";
 import type { ContentCollection } from "./types";
 
 export class DirectusError extends Error {
@@ -44,9 +51,22 @@ export async function listItems<T>(
   query: Record<string, string> = {},
   authenticated = true,
 ): Promise<T[]> {
-  return cmsRequest<T[]>(
+  const items = await cmsRequest<T[]>(
     `${itemPath(collection)}?${new URLSearchParams({ limit: "-1", ...query })}`,
     {},
     authenticated,
   );
+  return collection === "FAQ" ? items.map(decodeFaqItem) : items;
+}
+
+export async function encodeFaqWrite(body: Record<string, unknown>) {
+  const records = await listItems<{ body: string }>("SiteContent", {
+    filter: JSON.stringify({ id: { _eq: faqFieldMapId } }),
+    fields: "body",
+    limit: "1",
+  });
+  const mapping = records.length
+    ? parseFaqFieldMap(records[0].body)
+    : resolveFaqFields([]);
+  return encodeFaqItem(body, mapping);
 }

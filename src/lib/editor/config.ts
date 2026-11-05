@@ -19,8 +19,8 @@ export function siteOrigin(): string {
 }
 
 export function bootstrapEditorIds(): number[] {
-  return [
-    8184,
-    ...(process.env.CONTENT_EDITOR_WCA_IDS || "").split(",").map(Number),
-  ].filter((id) => Number.isSafeInteger(id) && id > 0);
+  return (process.env.CONTENT_EDITOR_WCA_IDS || "")
+    .split(",")
+    .map(Number)
+    .filter((id) => Number.isSafeInteger(id) && id > 0);
 }

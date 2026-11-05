@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Delegate } from "@/lib/directus";
 import type {
@@ -38,13 +38,17 @@ export function EditorWorkspace(props: Props) {
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState("");
   const [dirty, setDirty] = useState(false);
+  const selectedId =
+    !props.isEditor && props.delegates.length === 1
+      ? String(props.delegates[0].id)
+      : selected;
   const records = {
     Delegates: props.delegates,
     FAQ: props.faq,
     SiteContent: props.content,
     SiteEditors: props.editors,
   }[collection] as unknown as RecordData[];
-  const record = records.find((item) => String(item.id) === selected);
+  const record = records.find((item) => String(item.id) === selectedId);
   const regions = Array.from(
     new Set(props.delegates.map((delegate) => delegate.region)),
   ).sort();
@@ -91,7 +95,7 @@ export function EditorWorkspace(props: Props) {
       <p>
         {props.isEditor
           ? "Create or select a record. Save your changes to update Directus."
-          : "You can edit your blurb. A site editor manages your profile details and publication status."}
+          : "You can edit your profile details and publication status. Your WCA ID is read-only."}
       </p>
       <p role="status" aria-live="polite" className="text-green-800">
         {notice}
@@ -123,9 +127,9 @@ export function EditorWorkspace(props: Props) {
             {records.map((item) => (
               <li key={String(item.id)}>
                 <button
-                  aria-pressed={selected === String(item.id)}
+                  aria-pressed={selectedId === String(item.id)}
                   className={`w-full rounded border p-3 text-left ${
-                    selected === String(item.id) && !creating
+                    selectedId === String(item.id) && !creating
                       ? "border-primary bg-blue-50"
                       : "border-gray-200"
                   }`}
@@ -170,7 +174,7 @@ export function EditorWorkspace(props: Props) {
           {creating || record ? (
             <RecordForm
               key={`${collection}:${
-                creating ? "new" : selected
+                creating ? "new" : selectedId
               }:${JSON.stringify(record)}`}
               collection={collection}
               record={creating ? undefined : record}
@@ -271,7 +275,11 @@ function RecordForm({
           ...(method !== "DELETE"
             ? {
                 body: JSON.stringify(
-                  isEditor ? values : { description: values.description },
+                  Object.fromEntries(
+                    Object.entries(values).filter(
+                      ([name]) => isEditor || name !== "wcaId",
+                    ),
+                  ),
                 ),
               }
             : {}),
@@ -327,93 +335,92 @@ function RecordForm({
         disabled={busy || locked}
         className="space-y-4 disabled:opacity-60"
       >
-        {Object.entries(values)
-          .filter(([name]) => isEditor || name === "description")
-          .map(([name, value]) => {
-            const label =
-              (
-                {
-                  wcaId: "WCA ID",
-                  id: "WCA user ID (number)",
-                  description: "Blurb",
-                  body: "Content (HTML)",
-                  sort: "Display order",
-                  active: "Allow full content access",
-                } as Record<string, string>
-              )[name] || name[0].toUpperCase() + name.slice(1);
-            const fieldId = `editor-${collection}-${name}`;
-            return (
-              <div key={name} className="block space-y-1">
-                <label htmlFor={fieldId} className="font-semibold">
-                  {label}
-                </label>
-                {name === "active" ? (
-                  <input
-                    id={fieldId}
-                    type="checkbox"
-                    checked={!!value}
-                    onChange={(event) => field(name, event.target.checked)}
-                    className="ml-3"
-                  />
-                ) : name === "status" ? (
-                  <select
-                    id={fieldId}
-                    className={inputClass}
-                    value={String(value)}
-                    onChange={(event) => field(name, event.target.value)}
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
-                    <option value="hidden">Hidden</option>
-                  </select>
-                ) : ["body", "answer", "description"].includes(name) ? (
-                  <textarea
-                    id={fieldId}
-                    className={`${inputClass} ${
-                      name === "body" ? "font-mono text-sm" : ""
-                    }`}
-                    rows={name === "body" ? 18 : 8}
-                    maxLength={name === "body" ? 100000 : 10000}
-                    value={String(value)}
-                    onChange={(event) => field(name, event.target.value)}
-                  />
-                ) : (
-                  <input
-                    id={fieldId}
-                    className={inputClass}
-                    type={
+        {Object.entries(values).map(([name, value]) => {
+          const label =
+            (
+              {
+                wcaId: "WCA ID",
+                id: "WCA user ID (number)",
+                description: "Blurb",
+                body: "Content (HTML)",
+                sort: "Display order",
+                active: "Allow full content access",
+              } as Record<string, string>
+            )[name] || name[0].toUpperCase() + name.slice(1);
+          const fieldId = `editor-${collection}-${name}`;
+          return (
+            <div key={name} className="block space-y-1">
+              <label htmlFor={fieldId} className="font-semibold">
+                {label}
+              </label>
+              {name === "active" ? (
+                <input
+                  id={fieldId}
+                  type="checkbox"
+                  checked={!!value}
+                  onChange={(event) => field(name, event.target.checked)}
+                  className="ml-3"
+                />
+              ) : name === "status" ? (
+                <select
+                  id={fieldId}
+                  className={inputClass}
+                  value={String(value)}
+                  onChange={(event) => field(name, event.target.value)}
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              ) : ["body", "answer", "description"].includes(name) ? (
+                <textarea
+                  id={fieldId}
+                  className={`${inputClass} ${
+                    name === "body" ? "font-mono text-sm" : ""
+                  }`}
+                  rows={name === "body" ? 18 : 8}
+                  maxLength={name === "body" ? 100000 : 10000}
+                  value={String(value)}
+                  onChange={(event) => field(name, event.target.value)}
+                />
+              ) : (
+                <input
+                  id={fieldId}
+                  className={`${inputClass} read-only:bg-gray-100 read-only:text-gray-600`}
+                  type={
+                    name === "sort" || name === "id"
+                      ? "number"
+                      : name === "email"
+                      ? "email"
+                      : "text"
+                  }
+                  min={name === "id" ? 1 : 0}
+                  maxLength={300}
+                  readOnly={!isEditor && name === "wcaId"}
+                  required={[
+                    "name",
+                    "wcaId",
+                    "region",
+                    "question",
+                    "id",
+                  ].includes(name)}
+                  list={name === "region" ? "delegate-regions" : undefined}
+                  value={String(value)}
+                  onChange={(event) =>
+                    field(
+                      name,
                       name === "sort" || name === "id"
-                        ? "number"
-                        : name === "email"
-                        ? "email"
-                        : "text"
-                    }
-                    min={name === "id" ? 1 : 0}
-                    maxLength={300}
-                    required={[
-                      "name",
-                      "wcaId",
-                      "region",
-                      "question",
-                      "id",
-                    ].includes(name)}
-                    list={name === "region" ? "delegate-regions" : undefined}
-                    value={String(value)}
-                    onChange={(event) =>
-                      field(
-                        name,
-                        name === "sort" || name === "id"
-                          ? event.target.value === ""
-                            ? ""
-                            : Number(event.target.value)
-                          : event.target.value,
-                      )
-                    }
-                  />
-                )}
-              </div>
-            );
-          })}
+                        ? event.target.value === ""
+                          ? ""
+                          : Number(event.target.value)
+                        : event.target.value,
+                    )
+                  }
+                />
+              )}
+            </div>
+          );
+        })}
         <datalist id="delegate-regions">
           {regions.map((region) => (
             <option key={region} value={region} />

@@ -1,9 +1,15 @@
 import { AuthError } from "./auth";
 import { bootstrapEditorIds } from "./config";
-import { cmsRequest, itemPath } from "./directus";
-import { canEditBlurb } from "./permissions";
+import { cmsRequest, encodeFaqWrite, itemPath } from "./directus";
+import { decodeFaqItem } from "./faqFields";
+import defaults from "@/content/default-content.json";
+import { canEditDelegate } from "./permissions";
 import { contentCollections, ContentCollection, WcaUser } from "./types";
-import { validateBlurb, validateContent, ValidationError } from "./validation";
+import {
+  validateDelegateProfile,
+  validateContent,
+  ValidationError,
+} from "./validation";
 import type { Delegate } from "../directus";
 
 export async function mutateContent(
@@ -48,16 +54,21 @@ export async function mutateContent(
   }
   if (!isEditor) {
     const delegate = await cmsRequest<Delegate>(path);
-    if (!canEditBlurb(user, delegate))
-      throw new AuthError(403, "You can edit only your own delegate blurb.");
-    body = validateBlurb(input);
+    if (!canEditDelegate(user, delegate))
+      throw new AuthError(403, "You can edit only your own delegate profile.");
+    body = validateDelegateProfile(input, delegate.wcaId);
   } else if (request.method !== "DELETE") {
     body = validateContent(collection, input, request.method === "POST");
   }
-  if (collection === "SiteContent" && request.method !== "PATCH")
+  if (
+    collection === "SiteContent" &&
+    (request.method !== "PATCH" || !defaults.some((item) => item.id === id))
+  )
     throw new ValidationError("Edit an existing page section.");
-  return await cmsRequest(path, {
+  if (collection === "FAQ" && body) body = await encodeFaqWrite(body);
+  const result = await cmsRequest(path, {
     method: request.method,
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
+  return collection === "FAQ" ? decodeFaqItem(result) : result;
 }

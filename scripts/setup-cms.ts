@@ -1,6 +1,11 @@
 import { loadEnvConfig } from "@next/env";
 import defaults from "../src/content/default-content.json";
 import faq from "../src/content/default-faq.json";
+import {
+  encodeFaqItem,
+  faqFieldMapId,
+  resolveFaqFields,
+} from "../src/lib/editor/faqFields";
 
 loadEnvConfig(process.cwd());
 const baseUrl = process.env.DIRECTUS_URL || "https://admin.pnwcubing.com";
@@ -149,7 +154,7 @@ const definitions = [
         field: "active",
         type: "boolean",
         schema: { default_value: true },
-        meta: { interface: "boolean" },
+        meta: { interface: "boolean", special: ["cast-boolean"] },
       },
     ],
     note: "Full website editors. The ID is a numeric WCA user ID.",
@@ -220,10 +225,23 @@ async function ensureCollection(
     console.log(`Created ${collection}.`);
   } else {
     for (const field of fields) {
-      if (!current.some((value) => value.field === field.field)) {
+      const existing = current.find((value) => value.field === field.field);
+      if (!existing) {
         console.log(`Adding ${collection}.${field.field} (${field.type}).`);
         await api(`/fields/${collection}`, "POST", field);
         console.log(`Added ${collection}.${field.field}.`);
+      } else if (field.type === "boolean") {
+        const special = Array.isArray(existing.meta?.special)
+          ? existing.meta.special
+          : [];
+        if (!special.includes("cast-boolean")) {
+          await api(`/fields/${collection}/${field.field}`, "PATCH", {
+            meta: { special: [...special, "cast-boolean"] },
+          });
+          console.log(
+            `Enabled Boolean values for ${collection}.${field.field}.`,
+          );
+        }
       }
     }
   }
@@ -260,7 +278,24 @@ export async function setupCms({ checkOnly = false } = {}) {
         }`,
       );
   }
-  for (const { collection, fields } of definitions) {
+  const faqFields = resolveFaqFields(
+    (fieldsByCollection.get("FAQ") || []).map((field) => field.field),
+  );
+  const resolvedDefinitions = definitions.map((definition) => ({
+    ...definition,
+    fields: definition.fields.map((field) => ({
+      ...field,
+      field:
+        definition.collection === "FAQ" &&
+        (field.field === "question" || field.field === "answer")
+          ? faqFields[field.field]
+          : field.field,
+    })),
+  }));
+  for (const [name, field] of Object.entries(faqFields)) {
+    if (name !== field) console.log(`Using existing FAQ.${field} for ${name}.`);
+  }
+  for (const { collection, fields } of resolvedDefinitions) {
     const existing = collectionList.find(
       (item) => item.collection === collection,
     );
@@ -334,7 +369,7 @@ export async function setupCms({ checkOnly = false } = {}) {
       { status: "published" },
     );
   }
-  for (const { collection, fields, note } of definitions.slice(1)) {
+  for (const { collection, fields, note } of resolvedDefinitions.slice(1)) {
     await ensureCollection(
       collection,
       fields,
@@ -349,6 +384,26 @@ export async function setupCms({ checkOnly = false } = {}) {
       (item) => item.id,
     ),
   );
+  // Store field names with the content so the website needs no schema access.
+  const fieldMapRecord = {
+    body: JSON.stringify(faqFields),
+    status: "hidden",
+  };
+  if (existingContent.has(faqFieldMapId)) {
+    const current = await api<{ body: string; status: string }>(
+      `/items/SiteContent/${faqFieldMapId}`,
+    );
+    if (
+      current.body !== fieldMapRecord.body ||
+      current.status !== fieldMapRecord.status
+    )
+      await api(`/items/SiteContent/${faqFieldMapId}`, "PATCH", fieldMapRecord);
+  } else {
+    await api("/items/SiteContent", "POST", {
+      id: faqFieldMapId,
+      ...fieldMapRecord,
+    });
+  }
   for (const { id, body, status } of defaults) {
     if (!existingContent.has(id))
       await api("/items/SiteContent", "POST", { id, body, status });
@@ -360,22 +415,13 @@ export async function setupCms({ checkOnly = false } = {}) {
   );
   if (!existingContent.has("__setup_faq_v1")) {
     for (const item of faq) {
-      if (!existingFaq.has(item.id)) await api("/items/FAQ", "POST", item);
+      if (!existingFaq.has(item.id))
+        await api("/items/FAQ", "POST", encodeFaqItem(item, faqFields));
     }
     await api("/items/SiteContent", "POST", {
       id: "__setup_faq_v1",
       body: "",
       status: "hidden",
-    });
-  }
-  const existingEditors = await api<{ id: number }[]>(
-    "/items/SiteEditors?limit=-1&fields=id",
-  );
-  if (!existingEditors.some((item) => item.id === 8184)) {
-    await api("/items/SiteEditors", "POST", {
-      id: 8184,
-      name: "Cailyn Sinclair",
-      active: true,
     });
   }
   console.log(

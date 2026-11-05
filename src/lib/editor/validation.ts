@@ -79,19 +79,18 @@ export function validateContent(
   return input;
 }
 
-export function validateBlurb(value: unknown): { description: string } {
-  if (
-    !value ||
-    typeof value !== "object" ||
-    Array.isArray(value) ||
-    Object.keys(value).length !== 1 ||
-    !("description" in value) ||
-    typeof value.description !== "string" ||
-    value.description.length > 10000
-  ) {
-    throw new ValidationError(
-      "You can change only your blurb, with at most 10,000 characters.",
-    );
-  }
-  return { description: value.description };
+export function validateDelegateProfile(
+  value: unknown,
+  wcaId: string,
+): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    throw new ValidationError("Enter a valid record.");
+  if ("wcaId" in value)
+    throw new ValidationError("You cannot change your WCA ID here.");
+  const { wcaId: _wcaId, ...profile } = validateContent(
+    "Delegates",
+    { ...value, wcaId },
+    false,
+  );
+  return profile;
 }
