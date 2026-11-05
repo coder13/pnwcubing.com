@@ -43,6 +43,18 @@ The setup script supports Directus 10 roles and Directus 11 policies. It uses th
 3. Set `DIRECTUS_SETUP_TOKEN` in `.env.local` to an administrator token.
 4. Run `yarn cms:setup`.
 
+To inspect an existing setup first, run:
+
+```bash
+yarn cms:check
+```
+
+This command prints collection names, field names, types, and primary keys. It does not change the database or permissions. It does not print the administrator token or content records.
+
+Setup checks all existing collection schemas before it changes permissions. If a collection has incompatible field names, field types, or primary keys, setup stops. It does not rename fields, change existing field types, or replace a primary key.
+
+If Directus rejects a field change, the error now names the field and includes the Directus error code and message. Keep the existing collections and records. Run `yarn cms:check` to inspect the schema before a retry.
+
 The script keeps existing delegate names and blurbs. It adds `status` and `sort`, then marks existing delegate records as published. It creates the following collections:
 
 | Collection    | Purpose                                                      |

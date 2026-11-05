@@ -142,3 +142,139 @@ for (const policies of [false, true]) {
     );
   });
 }
+
+test("the read-only check reports existing fields without changing content or permissions", async () => {
+  const state = fixture(false);
+  await setupCms();
+  const original = global.fetch;
+  const requests: string[] = [];
+  global.fetch = async (input, init) => {
+    assert.equal(init?.method, "GET");
+    requests.push(new URL(String(input)).pathname);
+    return original(input, init);
+  };
+  const before = JSON.stringify({
+    fields: Array.from(state.fields),
+    items: Array.from(state.items),
+    permissions: state.permissions,
+  });
+  await setupCms({ checkOnly: true });
+  assert.equal(
+    JSON.stringify({
+      fields: Array.from(state.fields),
+      items: Array.from(state.items),
+      permissions: state.permissions,
+    }),
+    before,
+  );
+  assert.ok(requests.includes("/fields/FAQ"));
+});
+
+test("an existing field with different casing stops setup before permission changes", async () => {
+  const state = fixture(false);
+  state.fields.set("FAQ", [
+    { field: "id", type: "integer", schema: { is_primary_key: true } },
+    { field: "Question", type: "string" },
+  ]);
+  state.items.set("FAQ", [{ id: 1, Question: "Existing question" }]);
+  const original = global.fetch;
+  global.fetch = async (input, init) => {
+    assert.equal(init?.method, "GET");
+    return original(input, init);
+  };
+  await assert.rejects(
+    setupCms(),
+    /FAQ.Question conflicts with the required field question/,
+  );
+  assert.equal(state.permissions.length, 3);
+  assert.equal(state.items.get("FAQ")![0].Question, "Existing question");
+});
+
+test("setup never adds a new primary key to an existing collection", async () => {
+  const state = fixture(false);
+  state.fields.set("FAQ", [{ field: "question", type: "string" }]);
+  state.items.set("FAQ", []);
+  await assert.rejects(setupCms(), /FAQ has no id primary key/);
+  assert.equal(state.permissions.length, 3);
+  assert.equal(state.fields.get("Delegates")!.length, 3);
+});
+
+test("incompatible existing primary key types produce a clear error before changes", async () => {
+  const state = fixture(false);
+  state.fields.set("FAQ", [
+    { field: "id", type: "uuid", schema: { is_primary_key: true } },
+  ]);
+  state.items.set("FAQ", []);
+  await assert.rejects(
+    setupCms(),
+    /FAQ.id has type uuid, but the website expects integer/,
+  );
+  assert.equal(state.permissions.length, 3);
+});
+
+test("collection folders cannot be mistaken for tables", async () => {
+  const state = fixture(false);
+  state.fields.set("FAQ", []);
+  const original = global.fetch;
+  global.fetch = async (input, init) => {
+    assert.equal(init?.method, "GET");
+    if (new URL(String(input)).pathname === "/collections")
+      return Response.json({
+        data: [
+          { collection: "Delegates", schema: {} },
+          { collection: "FAQ", schema: null },
+        ],
+      });
+    return original(input, init);
+  };
+  await assert.rejects(setupCms(), /FAQ is a collection folder/);
+  assert.equal(state.permissions.length, 3);
+});
+
+test("a field failure reports Directus details and can resume without replacing data", async () => {
+  const state = fixture(false);
+  state.fields.set("FAQ", [
+    { field: "id", type: "integer", schema: { is_primary_key: true } },
+    { field: "question", type: "string" },
+  ]);
+  state.items.set("FAQ", [{ id: 20, question: "Existing question" }]);
+  const original = global.fetch;
+  let fail = true;
+  global.fetch = async (input, init) => {
+    if (
+      new URL(String(input)).pathname === "/fields/FAQ" &&
+      init?.method === "POST" &&
+      fail
+    ) {
+      return Response.json(
+        {
+          errors: [
+            {
+              message: "SQLITE_ERROR: cannot add column. test-setup-token",
+              extensions: { code: "INTERNAL_SERVER_ERROR" },
+            },
+          ],
+        },
+        { status: 500 },
+      );
+    }
+    return original(input, init);
+  };
+  await assert.rejects(setupCms(), (error: Error) => {
+    assert.match(error.message, /POST \/fields\/FAQ \(field answer\)/);
+    assert.match(
+      error.message,
+      /\[INTERNAL_SERVER_ERROR\] SQLITE_ERROR: cannot add column/,
+    );
+    assert.ok(!error.message.includes("test-setup-token"));
+    return true;
+  });
+  fail = false;
+  await setupCms();
+  assert.equal(state.items.get("FAQ")![0].question, "Existing question");
+  assert.equal(state.items.get("Delegates")![0].status, "published");
+  assert.equal(
+    state.fields.get("FAQ")!.filter((field) => field.field === "answer").length,
+    1,
+  );
+});
