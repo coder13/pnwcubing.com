@@ -1,5 +1,6 @@
 import { LandingPageCards } from "@/components/LandingPage/Cards";
 import { Metadata } from "next";
+import { CmsContent } from "@/components/CmsContent";
 
 export const metadata: Metadata = {
   title: "Home | pnwcubing",
@@ -27,7 +28,7 @@ export default function Home() {
                 "2px 2px 4px rgba(0, 0, 0, 0.5)" /* Optional text shadow for better readability */,
             }}
           >
-            Pacific Northwest Cubing
+            <CmsContent contentKey="home.title" as="span" />
           </h1>
           <LandingPageCards />
         </div>

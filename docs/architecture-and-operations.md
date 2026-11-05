@@ -2,6 +2,8 @@
 
 Last verified: April 11, 2026
 
+The WCA content editor adds authenticated CMS reads and writes. See [Content editor](content-editor.md) for the new data flow and deployment steps. The anonymous CMS reads described here apply to the earlier website.
+
 This document describes how `pnwcubing.com` works today, what it depends on, and how to keep the live system running.
 
 ## High-level architecture
