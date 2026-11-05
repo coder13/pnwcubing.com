@@ -22,14 +22,6 @@ The checks used a production build with local WCA and Directus fixtures. No prod
 
 The 24 automated checks also cover OAuth state, PKCE, encrypted sessions, expiration, current WCA roles, same-origin protection, input limits, publication filters, editor revocation, and repeatable setup on Directus 10 and 11.
 
-## Screenshots
-
-These screenshots contain fixture data.
-
-![Full content editor](screenshots/editor-desktop.png)
-
-![Delegate editor on a mobile screen](screenshots/delegate-mobile.png)
-
 ## Live setup still required
 
 The real WCA OAuth application and Directus service token were not available in this environment. Complete the steps in [the setup guide](content-editor.md), then repeat the live acceptance checks there.
