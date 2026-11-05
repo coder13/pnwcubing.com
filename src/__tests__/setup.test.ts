@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { setupCms } from "../../scripts/setup-cms";
+import { faqFieldMapId } from "../lib/editor/faqFields";
 
 process.env.DIRECTUS_SETUP_TOKEN = "test-setup-token";
 const originalFetch = global.fetch;
@@ -59,7 +60,22 @@ function fixture(policies: boolean) {
       }
     } else if (path[0] === "fields") {
       if (method === "GET") data = fields.get(path[1]);
-      else {
+      else if (method === "PATCH") {
+        const field = fields
+          .get(path[1])!
+          .find((field) => field.field === path[2]);
+        assert.ok(field);
+        field.meta = { ...(field.meta as Item), ...body.meta };
+      } else {
+        assert.ok(
+          !fields
+            .get(path[1])!
+            .some(
+              (field) =>
+                String(field.field).toLowerCase() === body.field.toLowerCase(),
+            ),
+          "Duplicate field name (case-insensitive database)",
+        );
         fields.get(path[1])!.push(body);
         if (body.schema?.default_value !== undefined)
           for (const item of items.get(path[1]) || [])
@@ -80,8 +96,16 @@ function fixture(policies: boolean) {
     } else if (path[0] === "items") {
       const records = items.get(path[1]);
       assert.ok(records, `Unknown collection ${path[1]}`);
-      if (method === "GET") data = records;
+      if (method === "GET")
+        data = path[2]
+          ? records.find((item) => String(item.id) === path[2])
+          : records;
       else if (method === "POST") {
+        for (const key of Object.keys(body))
+          assert.ok(
+            fields.get(path[1])!.some((field) => field.field === key),
+            `Unknown field ${path[1]}.${key}`,
+          );
         assert.ok(
           !records.some((item) => item.id === body.id),
           "Duplicate primary key",
@@ -122,19 +146,20 @@ for (const policies of [false, true]) {
         .filter((item) => item.status === "published").length,
       20,
     );
-    assert.deepEqual(state.items.get("SiteEditors"), [
-      { id: 8184, name: "Cailyn Sinclair", active: true },
-    ]);
+    assert.deepEqual(state.items.get("SiteEditors"), []);
     // A rerun must preserve later changes, hidden records, and deliberate FAQ deletions.
     state.items.get("Delegates")![0].status = "hidden";
-    state.items.get("SiteContent")![0].body = "Edited copy";
+    const page = state.items
+      .get("SiteContent")!
+      .find((item) => item.id === "about.2")!;
+    page.body = "Edited copy";
     state.items.get("FAQ")!.splice(0, 1);
     const fieldCounts = Array.from(state.fields.values()).map(
       (fields) => fields.length,
     );
     await setupCms();
     assert.equal(state.items.get("Delegates")![0].status, "hidden");
-    assert.equal(state.items.get("SiteContent")![0].body, "Edited copy");
+    assert.equal(page.body, "Edited copy");
     assert.equal(state.items.get("FAQ")!.length, 6);
     assert.deepEqual(
       Array.from(state.fields.values()).map((fields) => fields.length),
@@ -170,7 +195,53 @@ test("the read-only check reports existing fields without changing content or pe
   assert.ok(requests.includes("/fields/FAQ"));
 });
 
-test("an existing field with different casing stops setup before permission changes", async () => {
+for (const policies of [false, true]) {
+  test(`setup reuses legacy FAQ fields and preserves records on Directus ${
+    policies ? "11" : "10"
+  }`, async () => {
+    const state = fixture(policies);
+    state.fields.set("FAQ", [
+      { field: "id", type: "integer", schema: { is_primary_key: true } },
+      { field: policies ? "Question" : "question", type: "string" },
+      { field: "Answer", type: "text" },
+      { field: "Category", type: "string" },
+      { field: "status", type: "string" },
+      { field: "sort", type: "integer" },
+    ]);
+    const record = {
+      id: 1,
+      [policies ? "Question" : "question"]: "Existing question",
+      Answer: "Existing answer",
+      Category: "Existing category",
+      status: "hidden",
+      sort: 23,
+    };
+    state.items.set("FAQ", [{ ...record }]);
+    await setupCms();
+    assert.deepEqual(state.items.get("FAQ")![0], record);
+    assert.equal(state.items.get("FAQ")!.length, 7);
+    assert.ok(
+      state.items.get("FAQ")!.every((item) => typeof item.Answer === "string"),
+    );
+    assert.ok(
+      !state.fields.get("FAQ")!.some((field) => field.field === "answer"),
+    );
+    const configuration = state.items
+      .get("SiteContent")!
+      .find((item) => item.id === faqFieldMapId)!;
+    assert.deepEqual(JSON.parse(String(configuration.body)), {
+      question: policies ? "Question" : "question",
+      answer: "Answer",
+    });
+    assert.equal(configuration.status, "hidden");
+    state.items.get("FAQ")!.pop();
+    const before = JSON.stringify(Array.from(state.items));
+    await setupCms();
+    assert.equal(JSON.stringify(Array.from(state.items)), before);
+  });
+}
+
+test("the read-only check accepts legacy FAQ casing without mutations", async () => {
   const state = fixture(false);
   state.fields.set("FAQ", [
     { field: "id", type: "integer", schema: { is_primary_key: true } },
@@ -182,12 +253,38 @@ test("an existing field with different casing stops setup before permission chan
     assert.equal(init?.method, "GET");
     return original(input, init);
   };
-  await assert.rejects(
-    setupCms(),
-    /FAQ.Question conflicts with the required field question/,
-  );
+  await setupCms({ checkOnly: true });
   assert.equal(state.permissions.length, 3);
   assert.equal(state.items.get("FAQ")![0].Question, "Existing question");
+});
+
+test("ambiguous FAQ casing stops setup before permission changes", async () => {
+  const state = fixture(false);
+  state.fields.set("FAQ", [
+    { field: "id", type: "integer", schema: { is_primary_key: true } },
+    { field: "answer", type: "text" },
+    { field: "Answer", type: "text" },
+  ]);
+  await assert.rejects(setupCms(), /multiple fields named answer/);
+  assert.equal(state.permissions.length, 3);
+  assert.equal(state.fields.get("Delegates")!.length, 3);
+});
+
+test("legacy FAQ casing does not bypass type checks", async () => {
+  const state = fixture(false);
+  state.fields.set("FAQ", [
+    { field: "id", type: "integer", schema: { is_primary_key: true } },
+    { field: "Answer", type: "integer" },
+  ]);
+  await assert.rejects(setupCms(), /FAQ.Answer has type integer/);
+  assert.equal(state.permissions.length, 3);
+});
+
+test("unsupported field casing still stops setup before mutations", async () => {
+  const state = fixture(false);
+  state.fields.get("Delegates")!.push({ field: "Status", type: "string" });
+  await assert.rejects(setupCms(), /Delegates.Status conflicts/);
+  assert.equal(state.permissions.length, 3);
 });
 
 test("setup never adds a new primary key to an existing collection", async () => {
@@ -197,6 +294,33 @@ test("setup never adds a new primary key to an existing collection", async () =>
   await assert.rejects(setupCms(), /FAQ has no id primary key/);
   assert.equal(state.permissions.length, 3);
   assert.equal(state.fields.get("Delegates")!.length, 3);
+});
+
+test("setup repairs Boolean output for existing editor flags without changing records", async () => {
+  const state = fixture(false);
+  state.fields.set("SiteEditors", [
+    { field: "id", type: "integer", schema: { is_primary_key: true } },
+    { field: "name", type: "string" },
+    {
+      field: "active",
+      type: "boolean",
+      meta: { interface: "boolean", special: [] },
+    },
+  ]);
+  const records = [
+    { id: 8184, name: "Existing editor", active: 1 },
+    { id: 123, name: "Inactive editor", active: 0 },
+  ];
+  state.items.set("SiteEditors", structuredClone(records));
+  await setupCms();
+  assert.deepEqual(state.items.get("SiteEditors"), records);
+  assert.deepEqual(
+    state.fields.get("SiteEditors")!.find((field) => field.field === "active")!
+      .meta,
+    { interface: "boolean", special: ["cast-boolean"] },
+  );
+  await setupCms();
+  assert.deepEqual(state.items.get("SiteEditors"), records);
 });
 
 test("incompatible existing primary key types produce a clear error before changes", async () => {

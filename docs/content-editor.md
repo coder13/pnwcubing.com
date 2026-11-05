@@ -6,8 +6,7 @@ The private editor is at `/login` or `/admin`. The public menu has no login link
 
 | Account                                                | Access               |
 | ------------------------------------------------------ | -------------------- |
-| Current WCA delegate with a matching `Delegates.wcaId` | Edit their own blurb |
-| WCA user 8184, Cailyn Sinclair                         | Full content access  |
+| Current WCA delegate with a matching `Delegates.wcaId` | Edit their own profile |
 | Active user in `SiteEditors`                           | Full content access  |
 | User listed in `CONTENT_EDITOR_WCA_IDS`                | Full content access  |
 | Other account                                          | No editor access     |
@@ -32,7 +31,9 @@ Use separate OAuth credentials for a preview deployment. Set its exact origin in
 
 The website uses the authorization code flow with state and PKCE. It requests only the public WCA scope. The access token stays in an encrypted, HttpOnly session cookie. The browser cannot read it. The session expires with the WCA token, within eight hours at most. Closing a browser session removes the cookie unless the browser restores that session.
 
-The server reads the current WCA profile for each editor page and save. It also reads editor access on each request. A role removal takes effect on the next request. A delegate cannot change their name, WCA ID, region, email, or publication status.
+The server reads the current WCA profile for each editor page and save. It also reads editor access on each request. A role removal takes effect on the next request. A delegate can edit their own name, email, region, blurb, publication status, and display order. The WCA ID appears as a read-only field for delegates. Only full editors can change a profile's WCA ID, add profiles, or delete profiles.
+
+If a delegate has one matching profile, the editor selects it automatically. Delegates cannot edit other profiles or other content collections.
 
 ## Prepare Directus
 
@@ -51,7 +52,11 @@ yarn cms:check
 
 This command prints collection names, field names, types, and primary keys. It does not change the database or permissions. It does not print the administrator token or content records.
 
-Setup checks all existing collection schemas before it changes permissions. If a collection has incompatible field names, field types, or primary keys, setup stops. It does not rename fields, change existing field types, or replace a primary key.
+Setup checks all existing collection schemas before it changes permissions. It reuses existing FAQ text fields with different casing, such as `Question` and `Answer`. The website reads and writes those fields without changing their names or existing content. Setup stops for ambiguous FAQ names, other incompatible field names, incompatible types, or incompatible primary keys. It does not rename fields, change existing field types, or replace a primary key.
+
+Keep the hidden `SiteContent` record `__setup_faq_fields_v1`. It stores the FAQ field names for website writes, including when the FAQ collection is empty. The website service token needs no schema access. The content editor cannot change this record.
+
+Setup also configures `SiteEditors.active` to return Boolean values. This lets the website recognize active editors when the database stores the flag as `1` or `0`. Existing editor flags stay unchanged.
 
 If Directus rejects a field change, the error now names the field and includes the Directus error code and message. Keep the existing collections and records. Run `yarn cms:check` to inspect the schema before a retry.
 
@@ -64,7 +69,9 @@ The script keeps existing delegate names and blurbs. It adds `status` and `sort`
 | `SiteContent` | HTML page sections with stable IDs                           |
 | `SiteEditors` | Numeric WCA user IDs, names, and active flags                |
 
-The script copies the current site text into Directus. It adds Cailyn as the first editor. It also removes anonymous access to these four collections before it adds draft content. The website reads public content through its server token.
+The script copies the current site text into Directus. It removes anonymous access to these four collections before it adds draft content. The website reads public content through its server token. Setup does not grant editor access to any WCA user.
+
+To grant the first full editor access, add an active record in `SiteEditors` through Directus. Use the numeric WCA user ID as the record ID. You can also set `CONTENT_EDITOR_WCA_IDS` to a comma-separated list of numeric WCA user IDs.
 
 The script can run again. It does not replace existing page text, reset publication status, or restore deleted FAQ questions. Keep the hidden `SiteContent` record `__setup_faq_v1`. This record marks the completed FAQ import.
 
@@ -98,7 +105,7 @@ DIRECTUS_TOKEN=...
 CONTENT_EDITOR_WCA_IDS=
 ```
 
-Deploy the branch after CMS setup. Open `/login` and sign in with WCA. Use Editor access to add or revoke full editors. User 8184 always has access. The optional environment list also grants access and overrides an inactive CMS entry.
+Deploy the branch after CMS setup. Open `/login` and sign in with WCA. Use Editor access to add or revoke full editors. No user has built-in full access. The optional environment list grants access and overrides an inactive CMS entry.
 
 ## Content states
 
@@ -128,7 +135,7 @@ The automated checks use mocked WCA and Directus responses. They cover ownership
 
 For a live acceptance check:
 
-1. Sign in as user 8184.
+1. Sign in as an active full editor.
 2. Add a draft delegate with a valid WCA ID.
 3. Change the region and blurb, then publish the profile.
 4. Open `/delegates` and find the profile in its region.
@@ -136,6 +143,6 @@ For a live acceptance check:
 6. Add and publish a FAQ question, then inspect `/about/competing`.
 7. Edit a page section, save it, and inspect the public page.
 8. Grant another WCA account editor access, then revoke that access.
-9. Sign in as a delegate and change only that delegate's blurb.
+9. Sign in as a delegate and edit that delegate's profile. Make sure that the WCA ID is read-only.
 10. Sign in with an unrelated WCA account and make sure that access is refused.
 11. Sign out and make sure that the editor redirects to `/login`.

@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { seal, unseal } from "../lib/editor/crypto";
-import { canEditBlurb, isDelegate } from "../lib/editor/permissions";
-import { validateBlurb, validateContent } from "../lib/editor/validation";
+import { canEditDelegate, isDelegate } from "../lib/editor/permissions";
+import {
+  validateDelegateProfile,
+  validateContent,
+} from "../lib/editor/validation";
 import { safeHtml } from "../lib/editor/html";
 import { mutateContent } from "../lib/editor/mutations";
 import {
@@ -12,13 +15,16 @@ import {
 } from "../lib/editor/auth";
 import type { Delegate } from "../lib/directus";
 import type { WcaUser } from "../lib/editor/types";
+import { faqFieldMapId } from "../lib/editor/faqFields";
 
 process.env.SESSION_SECRET = "a-test-secret-with-more-than-32-characters";
 process.env.SITE_URL = "https://www.pnwcubing.com";
 process.env.DIRECTUS_TOKEN = "test-service-token";
+process.env.CONTENT_EDITOR_WCA_IDS = "";
 const originalFetch = global.fetch;
 afterEach(() => {
   global.fetch = originalFetch;
+  process.env.CONTENT_EDITOR_WCA_IDS = "";
 });
 const user: WcaUser = {
   id: 123,
@@ -37,6 +43,14 @@ const delegate = {
   sort: 0,
 } as Delegate;
 const identity = { user, isEditor: false };
+const profile = {
+  name: "Updated Delegate",
+  email: "updated@example.com",
+  region: "Oregon",
+  description: "New blurb",
+  status: "hidden",
+  sort: 3,
+};
 function request(method: string, body?: unknown) {
   return new Request("https://www.pnwcubing.com/api/editor/Delegates/1", {
     method,
@@ -69,17 +83,17 @@ test("sessions are encrypted, expire, reject tampering, and bind their purpose",
   );
 });
 
-test("only verified delegates with a matching WCA ID own a blurb", () => {
-  assert.equal(canEditBlurb(user, delegate), true);
+test("only verified delegates with a matching WCA ID own a profile", () => {
+  assert.equal(canEditDelegate(user, delegate), true);
   assert.equal(
-    canEditBlurb({ ...user, delegate_status: null }, delegate),
+    canEditDelegate({ ...user, delegate_status: null }, delegate),
     false,
   );
   assert.equal(
-    canEditBlurb({ ...user, wca_id: "2011TEST01" }, delegate),
+    canEditDelegate({ ...user, wca_id: "2011TEST01" }, delegate),
     false,
   );
-  assert.equal(canEditBlurb({ ...user, wca_id: null }, delegate), false);
+  assert.equal(canEditDelegate({ ...user, wca_id: null }, delegate), false);
   assert.equal(
     isDelegate({ ...user, delegate_status: "former_delegate" }),
     false,
@@ -90,14 +104,27 @@ test("only verified delegates with a matching WCA ID own a blurb", () => {
   );
 });
 
-test("delegate input cannot change status, identity, region, or other fields", () => {
-  for (const field of ["status", "region", "name", "wcaId", "id", "active"]) {
+test("delegates can edit normal profile fields but not identity or system fields", () => {
+  assert.deepEqual(validateDelegateProfile(profile, delegate.wcaId), profile);
+  for (const field of ["wcaId", "id", "active", "date_updated"]) {
     assert.throws(() =>
-      validateBlurb({ description: "New blurb", [field]: "changed" }),
+      validateDelegateProfile(
+        { ...profile, [field]: "changed" },
+        delegate.wcaId,
+      ),
     );
   }
-  assert.throws(() => validateBlurb({ description: "x".repeat(10001) }));
-  assert.deepEqual(validateBlurb({ description: "" }), { description: "" });
+  for (const invalid of [
+    { email: "invalid-email" },
+    { name: "" },
+    { region: "" },
+    { description: "x".repeat(10001) },
+    { sort: -1 },
+    { status: "public" },
+  ])
+    assert.throws(() =>
+      validateDelegateProfile({ ...profile, ...invalid }, delegate.wcaId),
+    );
 });
 
 test("editor validation rejects unknown fields, invalid statuses, IDs, and orders", () => {
@@ -175,7 +202,7 @@ test("mutations reject cross-origin and missing-origin requests", () => {
   );
 });
 
-test("a delegate save reads the CMS owner and writes only their blurb", async () => {
+test("a delegate save checks ownership and updates all editable profile fields", async () => {
   const writes: { url: string; method?: string; body?: BodyInit | null }[] = [];
   global.fetch = async (url, init) => {
     writes.push({ url: String(url), method: init?.method, body: init?.body });
@@ -184,22 +211,13 @@ test("a delegate save reads the CMS owner and writes only their blurb", async ()
       "Bearer test-service-token",
     );
     return upstream(
-      init?.method === "PATCH"
-        ? { ...delegate, description: "New blurb" }
-        : delegate,
+      init?.method === "PATCH" ? { ...delegate, ...profile } : delegate,
     );
   };
-  await mutateContent(
-    request("PATCH", { description: "New blurb" }),
-    "Delegates",
-    ["1"],
-    identity,
-  );
+  await mutateContent(request("PATCH", profile), "Delegates", ["1"], identity);
   assert.equal(writes.length, 2);
   assert.equal(writes[1].method, "PATCH");
-  assert.deepEqual(JSON.parse(String(writes[1].body)), {
-    description: "New blurb",
-  });
+  assert.deepEqual(JSON.parse(String(writes[1].body)), profile);
 });
 
 test("forged owner IDs, former delegates, and non-owners cannot save", async () => {
@@ -215,7 +233,7 @@ test("forged owner IDs, former delegates, and non-owners cannot save", async () 
       ["2"],
       identity,
     ),
-    /own delegate blurb/,
+    /own delegate profile/,
   );
   global.fetch = async () => upstream(delegate);
   await assert.rejects(
@@ -225,12 +243,90 @@ test("forged owner IDs, former delegates, and non-owners cannot save", async () 
       ["1"],
       { user: { ...user, delegate_status: null }, isEditor: false },
     ),
-    /own delegate blurb/,
+    /own delegate profile/,
   );
   assert.equal(mutations, 0);
 });
 
-test("delegates cannot create, delete, publish, or edit any other collection", async () => {
+test("FAQ create and update use the stored field names without schema permissions", async () => {
+  const writes: unknown[] = [];
+  global.fetch = async (url, init) => {
+    const parsed = new URL(String(url));
+    if (parsed.pathname === "/items/SiteContent") {
+      assert.deepEqual(JSON.parse(parsed.searchParams.get("filter")!), {
+        id: { _eq: faqFieldMapId },
+      });
+      return upstream([
+        { body: JSON.stringify({ question: "Question", answer: "Answer" }) },
+      ]);
+    }
+    assert.ok(parsed.pathname.startsWith("/items/FAQ"));
+    const body = JSON.parse(String(init?.body));
+    writes.push(body);
+    return upstream({ id: 20, ...body });
+  };
+  const admin = { user, isEditor: true };
+  const record = {
+    question: "Question",
+    answer: "Updated answer",
+    status: "draft",
+    sort: 0,
+  };
+  for (const method of ["POST", "PATCH"]) {
+    const result = await mutateContent(
+      request(method, record),
+      "FAQ",
+      method === "POST" ? undefined : ["20"],
+      admin,
+    );
+    assert.deepEqual(result, { id: 20, ...record });
+  }
+  assert.deepEqual(
+    writes,
+    [0, 1].map(() => ({
+      Question: record.question,
+      Answer: record.answer,
+      status: "draft",
+      sort: 0,
+    })),
+  );
+});
+
+test("invalid FAQ field configuration prevents writes", async () => {
+  global.fetch = async (url, init) => {
+    assert.equal(new URL(String(url)).pathname, "/items/SiteContent");
+    assert.equal(init?.method, undefined);
+    return upstream([
+      { body: JSON.stringify({ question: "question", answer: "status" }) },
+    ]);
+  };
+  await assert.rejects(
+    mutateContent(
+      request("POST", { question: "Q", answer: "A", status: "draft", sort: 0 }),
+      "FAQ",
+      undefined,
+      { user, isEditor: true },
+    ),
+    /FAQ field configuration is invalid/,
+  );
+});
+
+test("the editor cannot change setup records", async () => {
+  global.fetch = async () => {
+    throw new Error("Unexpected upstream request");
+  };
+  await assert.rejects(
+    mutateContent(
+      request("PATCH", { body: "{}", status: "published" }),
+      "SiteContent",
+      [faqFieldMapId],
+      { user, isEditor: true },
+    ),
+    /existing page section/,
+  );
+});
+
+test("delegates cannot create, delete, or edit any other collection", async () => {
   global.fetch = async () => {
     throw new Error("Unexpected upstream request");
   };
@@ -251,21 +347,31 @@ test("delegates cannot create, delete, publish, or edit any other collection", a
       /cannot change/,
     );
   }
-  global.fetch = async () => upstream(delegate);
-  await assert.rejects(
-    mutateContent(
-      request("PATCH", { description: "New", status: "published" }),
-      "Delegates",
-      ["1"],
-      identity,
-    ),
-    /only your blurb/,
-  );
+});
+
+test("delegate saves reject WCA ID changes before writing to Directus", async () => {
+  global.fetch = async (_url, init) => {
+    assert.equal(init?.method, undefined);
+    return upstream(delegate);
+  };
+  for (const wcaId of [delegate.wcaId, "2011TEST01"]) {
+    await assert.rejects(
+      mutateContent(
+        request("PATCH", { ...profile, wcaId }),
+        "Delegates",
+        ["1"],
+        identity,
+      ),
+      /cannot change your WCA ID/,
+    );
+  }
 });
 
 test("full editors can create, move, publish, hide, and delete content", async () => {
   const writes: { method?: string; body: unknown }[] = [];
-  global.fetch = async (_url, init) => {
+  global.fetch = async (url, init) => {
+    if (new URL(String(url)).pathname === "/items/SiteContent" && !init?.method)
+      return upstream([]);
     writes.push({
       method: init?.method,
       body: init?.body ? JSON.parse(String(init.body)) : undefined,
@@ -319,7 +425,8 @@ test("full editors can create, move, publish, hide, and delete content", async (
   );
 });
 
-test("the bootstrap account cannot be revoked through editor access", async () => {
+test("an environment editor cannot be revoked through editor access", async () => {
+  process.env.CONTENT_EDITOR_WCA_IDS = "8184";
   global.fetch = async () => {
     throw new Error("Unexpected upstream request");
   };
@@ -333,7 +440,6 @@ test("the bootstrap account cannot be revoked through editor access", async () =
 });
 
 test("editor access uses the numeric ID, handles absent entries, and honors revocation", async () => {
-  assert.equal(await isContentEditor(8184), true);
   global.fetch = async (url) => {
     assert.equal(
       JSON.parse(new URL(String(url)).searchParams.get("filter")!).id._eq,
@@ -348,6 +454,20 @@ test("editor access uses the numeric ID, handles absent entries, and honors revo
   assert.equal(await isContentEditor(123), false);
   global.fetch = async () => new Response(null, { status: 503 });
   await assert.rejects(isContentEditor(123));
+});
+
+test("user 8184 has full access only when explicitly configured", async () => {
+  global.fetch = async () => upstream([]);
+  assert.equal(await isContentEditor(8184), false);
+  global.fetch = async () => upstream([{ id: 8184, active: true }]);
+  assert.equal(await isContentEditor(8184), true);
+  global.fetch = async () => upstream([{ id: 8184, active: false }]);
+  assert.equal(await isContentEditor(8184), false);
+  process.env.CONTENT_EDITOR_WCA_IDS = "8184";
+  global.fetch = async () => {
+    throw new Error("Unexpected upstream request");
+  };
+  assert.equal(await isContentEditor(8184), true);
 });
 
 test("WCA identity comes only from the authenticated me endpoint", async () => {

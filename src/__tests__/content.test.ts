@@ -7,6 +7,7 @@ import {
 } from "../lib/editor/content";
 import defaults from "../content/default-content.json";
 import defaultFaq from "../content/default-faq.json";
+import { listItems } from "../lib/editor/directus";
 
 process.env.DIRECTUS_TOKEN = "test-service-token";
 const originalFetch = global.fetch;
@@ -62,6 +63,33 @@ test("upstream failures preserve page copy and FAQs, without exposing unfiltered
     defaults.find((item) => item.id === "about.2")?.body,
   );
   assert.equal((await getPublicFaq()).length, defaultFaq.length);
+});
+
+test("public and editor FAQ reads normalize legacy fields without schema access", async () => {
+  const record = {
+    id: 20,
+    Question: "Existing question",
+    Answer: "Existing answer",
+    Category: "General",
+    status: "published",
+    sort: 2,
+  };
+  global.fetch = async (input) => {
+    assert.equal(new URL(String(input)).pathname, "/items/FAQ");
+    return Response.json({ data: [record] });
+  };
+  const expected = [
+    {
+      id: 20,
+      question: record.Question,
+      answer: record.Answer,
+      Category: record.Category,
+      status: record.status,
+      sort: record.sort,
+    },
+  ];
+  assert.deepEqual(await getPublicFaq(), expected);
+  assert.deepEqual(await listItems("FAQ"), expected);
 });
 
 test("every page section and original FAQ has a nonempty fallback", () => {

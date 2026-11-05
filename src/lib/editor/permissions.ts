@@ -13,6 +13,6 @@ export function isDelegate(user: WcaUser): boolean {
   return delegateStatuses.has(user.delegate_status || "");
 }
 
-export function canEditBlurb(user: WcaUser, delegate: Delegate): boolean {
+export function canEditDelegate(user: WcaUser, delegate: Delegate): boolean {
   return isDelegate(user) && !!user.wca_id && user.wca_id === delegate.wcaId;
 }
