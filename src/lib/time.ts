@@ -1,5 +1,16 @@
 import { numSuffix } from "./utils";
 
+export const formatRegistrationTime = (value: string) =>
+  new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/Los_Angeles",
+    timeZoneName: "short",
+  }).format(new Date(value));
+
 const months = [
   "January",
   "February",

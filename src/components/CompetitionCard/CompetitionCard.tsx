@@ -1,7 +1,7 @@
 import "@cubing/icons";
 
 // import { isLikelyStateChampionship } from "@/lib/competitions";
-import { formatDateRange } from "@/lib/time";
+import { formatDateRange, formatRegistrationTime } from "@/lib/time";
 import { APICompetition } from "@/lib/wcaApi";
 
 import { Alert } from "flowbite-react";
@@ -69,7 +69,10 @@ export function CompetitionCard({
                 Registration open for{" "}
                 {formatDistance(Date.now(), new Date(registration_close))}
                 <br />
-                Closes on {new Date(registration_close).toLocaleString()}
+                Closes on{" "}
+                <time dateTime={registration_close}>
+                  {formatRegistrationTime(registration_close)}
+                </time>
               </>
             )}
           </span>
@@ -79,7 +82,9 @@ export function CompetitionCard({
           <span className="font-medium">
             Registration opens in{" "}
             {formatDistance(Date.now(), new Date(registration_open))} at{" "}
-            {new Date(registration_open).toLocaleString()}
+            <time dateTime={registration_open}>
+              {formatRegistrationTime(registration_open)}
+            </time>
           </span>
         </Alert>
       )}

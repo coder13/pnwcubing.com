@@ -219,7 +219,7 @@ A signed-in visitor sees their WCA avatar in the top right. If WCA has no avatar
 
 For Parents and Competition Guide each contain their own FAQ list block. Questions, rich answers, visibility, and order are editable inside each page. Each answer appears below its question. Visitors do not need to expand a question to read it.
 
-The server renders every page before it appears. Pages wait for their content without a loading screen. Public page text, FAQ answers, delegate profiles, and competition details are in the initial HTML. Competition requests use a 60-second cache. Directus content and private editor data load on each request.
+The server renders every page before it appears. Pages wait for their content without a loading screen. Public page text, FAQ answers, delegate profiles, and competition details are in the initial HTML. Registration dates show labeled Pacific time. Competition requests use a 60-second cache. Directus content and private editor data load on each request.
 
 The local preview runs with `yarn dev` at `http://localhost:3000`. Development uses `.next-dev`, while production builds use `.next`. A production build can run without stopping the local preview.
 

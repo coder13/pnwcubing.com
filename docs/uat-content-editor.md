@@ -89,3 +89,5 @@ FAQ answers now appear directly below their questions on public pages and in the
 Every page renders on the server at request time. The root, delegate, and competition loading screens were removed. Competition cards also render on the server. Public WCA competition requests keep a 60-second cache.
 
 The production preview returned HTTP 200 for all eight public and login routes. Each initial HTML response contained its page content and title, without a loading screen or deferred content. Delegate profiles, competition details, and both FAQ lists appeared without browser JavaScript. Signed-out requests for editor pages redirected to login. All 119 tests, ESLint, TypeScript, and the production build passed. The local development preview remained available on port 3000.
+
+The live site passed the same eight page response checks after deployment. Registration dates now show Pacific time with PST or PDT labels. The formatter test covers both winter and summer dates. All 120 tests, ESLint, TypeScript, and the final production build passed. The unused legacy FAQ component was removed.
