@@ -27,6 +27,8 @@ const { currentUser } =
   require("../lib/editor/auth") as typeof import("../lib/editor/auth");
 const { default: Login } =
   require("../app/login/page") as typeof import("../app/login/page");
+const { default: DirectusLogin } =
+  require("../app/login/directus/page") as typeof import("../app/login/directus/page");
 
 process.env.SITE_URL = "https://www.pnwcubing.com";
 process.env.DIRECTUS_URL = "https://admin.pnwcubing.com";
@@ -57,11 +59,16 @@ function context<T>(cookie: string, fn: () => T): T {
 function signIn(
   overrides: Record<string, string> = {},
   origin = process.env.SITE_URL!,
+  json = false,
 ) {
   return login(
     new Request(`${process.env.SITE_URL}/api/auth/directus`, {
       method: "POST",
-      headers: { origin, "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        origin,
+        "Content-Type": "application/x-www-form-urlencoded",
+        ...(json ? { Accept: "application/json" } : {}),
+      },
       body: new URLSearchParams({
         email: "editor@example.com",
         password: "secret-password",
@@ -153,7 +160,7 @@ test("Directus administrators can sign in and unrelated or inactive roles cannot
       response.headers.get("location"),
       allowed
         ? "https://www.pnwcubing.com/admin"
-        : "https://www.pnwcubing.com/login?error=directus-access",
+        : "https://www.pnwcubing.com/login/directus?error=directus-access",
     );
     assert.equal(!!response.cookies.get("pnw_session"), allowed);
     assert.equal(paths.includes("/auth/logout"), !allowed);
@@ -222,7 +229,7 @@ test("Directus sign-in rejects cross-site requests and invalid form data before 
     const response = await signIn(input);
     assert.equal(
       response.headers.get("location"),
-      "https://www.pnwcubing.com/login?error=directus",
+      "https://www.pnwcubing.com/login/directus?error=directus",
     );
     assert.equal(response.cookies.get("pnw_session"), undefined);
   }
@@ -243,7 +250,7 @@ test("Directus failures give safe messages and support two-factor codes without 
     const response = await signIn();
     assert.equal(
       response.headers.get("location"),
-      `https://www.pnwcubing.com/login?error=${reason}`,
+      `https://www.pnwcubing.com/login/directus?error=${reason}`,
     );
     assert.equal(response.cookies.get("pnw_session"), undefined);
     assert.ok(!response.headers.get("location")!.includes("secret-password"));
@@ -299,7 +306,16 @@ test("Directus identities never match numeric WCA ownership and session response
   });
 });
 
-test("the login page provides a server-rendered password form without exposing unsafe error values", () => {
+test("the login page shows provider buttons and keeps the Directus fields on their own page", () => {
+  const html = renderToStaticMarkup(createElement(Login, { searchParams: {} }));
+  assert.ok(html.includes('href="/login/directus"'));
+  assert.ok(html.includes("Sign in with WCA"));
+  assert.ok(html.includes("Sign in with Directus"));
+  assert.ok(!html.includes('type="password"'));
+  assert.ok(!html.includes('name="email"'));
+});
+
+test("the Directus page renders email and password first and only displays a code field after a challenge", () => {
   for (const error of [
     undefined,
     "constructor",
@@ -307,12 +323,87 @@ test("the login page provides a server-rendered password form without exposing u
     "directus-access",
   ]) {
     const html = renderToStaticMarkup(
-      createElement(Login, { searchParams: { error } }),
+      createElement(DirectusLogin, { searchParams: { error } }),
     );
     assert.ok(html.includes('action="/api/auth/directus"'));
     assert.ok(html.includes('type="password"'));
     assert.match(html, /autocomplete="current-password"/i);
-    assert.match(html, /autocomplete="one-time-code"/i);
-    assert.ok(html.includes("Sign in with WCA"));
+    assert.ok(!html.includes('name="otp"'));
+    assert.ok(html.includes('href="/login"'));
   }
+  const challenge = renderToStaticMarkup(
+    createElement(DirectusLogin, { searchParams: { error: "directus-otp" } }),
+  );
+  assert.match(challenge, /autocomplete="one-time-code"/i);
+  assert.match(challenge, /name="otp"[^>]*required/);
+});
+
+test("the JSON login flow requests a code only when Directus requires one and creates no session before verification", async () => {
+  let attempt = 0;
+  global.fetch = async (input, init) => {
+    const path = new URL(String(input)).pathname;
+    if (path === "/users/me") return Response.json({ data: profile });
+    assert.equal(path, "/auth/login");
+    const body = JSON.parse(String(init?.body));
+    attempt++;
+    assert.equal(body.email, "editor@example.com");
+    assert.equal(body.password, "secret-password");
+    if (!body.otp || body.otp !== "123456")
+      return Response.json(
+        { errors: [{ extensions: { code: "INVALID_OTP" } }] },
+        { status: 401 },
+      );
+    return Response.json({ data: tokens });
+  };
+  const unverifiedAttempts: Record<string, string>[] = [{}, { otp: "000000" }];
+  for (const input of unverifiedAttempts) {
+    const response = await signIn(input, process.env.SITE_URL!, true);
+    assert.equal(response.status, 401);
+    const result = await response.json();
+    assert.equal(result.requiresOtp, true);
+    assert.equal(result.code, "directus-otp");
+    assert.equal(response.cookies.get("pnw_session"), undefined);
+    assert.ok(!JSON.stringify(result).includes("secret-password"));
+    assert.match(response.headers.get("cache-control")!, /no-store/);
+  }
+  const verified = await signIn({ otp: "123456" }, process.env.SITE_URL!, true);
+  assert.equal(verified.status, 200);
+  assert.deepEqual(await verified.json(), { success: true });
+  assert.ok(verified.cookies.get("pnw_session")?.httpOnly);
+  assert.equal(attempt, 3);
+});
+
+test("accounts without two-factor authentication sign in directly without a challenge", async () => {
+  global.fetch = async (input, init) => {
+    if (new URL(String(input)).pathname === "/users/me")
+      return Response.json({ data: profile });
+    assert.ok(!("otp" in JSON.parse(String(init?.body))));
+    return Response.json({ data: tokens });
+  };
+  const response = await signIn({}, process.env.SITE_URL!, true);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { success: true });
+  assert.ok(response.cookies.get("pnw_session"));
+});
+
+test("wrong passwords do not request two-factor verification or expose upstream error details", async () => {
+  global.fetch = async () =>
+    Response.json(
+      {
+        errors: [
+          {
+            message: "secret-password",
+            extensions: { code: "INVALID_CREDENTIALS" },
+          },
+        ],
+      },
+      { status: 401 },
+    );
+  const response = await signIn({}, process.env.SITE_URL!, true);
+  const result = await response.json();
+  assert.equal(response.status, 401);
+  assert.equal(result.requiresOtp, false);
+  assert.equal(result.code, "directus");
+  assert.ok(!JSON.stringify(result).includes("secret-password"));
+  assert.equal(response.cookies.get("pnw_session"), undefined);
 });

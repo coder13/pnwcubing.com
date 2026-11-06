@@ -35,7 +35,7 @@ export default async function Admin({
       error instanceof DirectusLoginError &&
       error.reason === "directus-access"
     )
-      redirect("/login?error=directus-access");
+      redirect("/login/directus?error=directus-access");
     return <EditorUnavailable />;
   }
   if (!identity) redirect("/login");

@@ -42,7 +42,9 @@ If a delegate has one matching profile, the editor selects it automatically. Del
 
 The website login page also accepts accounts from `admin.pnwcubing.com`. A WCA account is not required. In the Directus console, open Users and assign the `Content-Editor` role to each approved editor. Existing Directus administrators also have full website content access. Other Directus roles do not grant website editor access.
 
-On the website, open `/login` and enter the Directus email and password. If the account uses two-factor authentication, enter its current six-digit code. Credentials go from the website server to Directus. The website does not store the password. Tokens stay in an encrypted, HttpOnly cookie and never appear in local storage.
+On the website, open `/login` and select Sign in with Directus. The button opens `/login/directus`, which first asks for email and password. If Directus requests two-factor authentication, the form then asks for the current six-digit code. Accounts without two-factor authentication go straight to the editor. An incorrect code keeps the code step open for another attempt. Use a different account returns to the email and password fields.
+
+Credentials go from the website server to Directus. During verification, the form keeps the password only in browser memory. Completing sign-in or changing accounts clears it. The password never appears in a URL, cookie, or browser storage. Tokens stay in an encrypted, HttpOnly cookie and never appear in local storage.
 
 Directus sign-in follows the access token lifetime configured in Directus, within eight hours at most. The current instance uses 15 minutes. When the token expires, sign in again. The website reads the current Directus account status and role before every editor page and save. Removing editor access or suspending the account blocks the next request.
 

@@ -7,10 +7,12 @@ import {
 import { siteOrigin } from "@/lib/editor/config";
 import { seal } from "@/lib/editor/crypto";
 import { DirectusLoginError, loginDirectus } from "@/lib/editor/directusAuth";
+import { directusLoginMessage } from "@/lib/editor/loginMessages";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const wantsJson = request.headers.get("accept")?.includes("application/json");
   const headers = {
     "Cache-Control": "private, no-store",
     "Referrer-Policy": "no-referrer",
@@ -51,10 +53,12 @@ export async function POST(request: Request) {
       password,
       ...(otp ? { otp } : {}),
     });
-    const response = NextResponse.redirect(new URL("/admin", siteOrigin()), {
-      status: 303,
-      headers,
-    });
+    const response = wantsJson
+      ? NextResponse.json({ success: true }, { headers })
+      : NextResponse.redirect(new URL("/admin", siteOrigin()), {
+          status: 303,
+          headers,
+        });
     response.cookies.set(sessionCookie, seal(session, "session"), {
       ...cookieOptions(),
       maxAge: Math.max(1, Math.floor((session.expiresAt - Date.now()) / 1000)),
@@ -65,8 +69,20 @@ export async function POST(request: Request) {
       error instanceof DirectusLoginError
         ? error.reason
         : "directus-unavailable";
+    if (wantsJson)
+      return NextResponse.json(
+        {
+          code: reason,
+          error: directusLoginMessage(reason),
+          requiresOtp: reason === "directus-otp",
+        },
+        {
+          status: error instanceof DirectusLoginError ? error.status : 503,
+          headers,
+        },
+      );
     return NextResponse.redirect(
-      new URL(`/login?error=${reason}`, siteOrigin()),
+      new URL(`/login/directus?error=${reason}`, siteOrigin()),
       { status: 303, headers },
     );
   }
