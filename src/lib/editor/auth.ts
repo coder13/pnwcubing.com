@@ -88,3 +88,15 @@ export function requireSameOrigin(request: Request) {
     throw new AuthError(403, "This request did not come from this website.");
   }
 }
+
+export async function hasDelegateProfile(userId: number): Promise<boolean> {
+  const delegates = await listItems<{ id: string }>("Delegates", {
+    filter: JSON.stringify({
+      wcaUserId: { _eq: userId },
+      status: { _neq: "archived" },
+    }),
+    fields: "id",
+    limit: "1",
+  });
+  return delegates.length > 0;
+}

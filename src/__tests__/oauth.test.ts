@@ -202,3 +202,84 @@ test("logout requires the site origin and clears the session", async () => {
     403,
   );
 });
+
+test("an additional account with no competitor ID can sign in through its numeric profile link", async () => {
+  const { cookie, state } = await startLogin();
+  global.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === "/oauth/token")
+      return Response.json({ access_token: "token", expires_in: 7200 });
+    if (url.pathname === "/api/v0/me")
+      return Response.json({
+        me: {
+          id: 123,
+          name: "Additional",
+          wca_id: null,
+          delegate_status: null,
+        },
+      });
+    if (url.pathname === "/items/SiteEditors")
+      return Response.json({ data: [] });
+    assert.equal(url.pathname, "/items/Delegates");
+    assert.deepEqual(JSON.parse(url.searchParams.get("filter")!), {
+      wcaUserId: { _eq: 123 },
+      status: { _neq: "archived" },
+    });
+    return Response.json({ data: [{ id: "own" }] });
+  };
+  const response = await context(`pnw_oauth=${cookie}`, () =>
+    callback(
+      new Request(
+        `https://www.pnwcubing.com/api/auth/callback?code=verified&state=${state.state}`,
+      ),
+    ),
+  );
+  assert.equal(
+    response.headers.get("location"),
+    "https://www.pnwcubing.com/admin",
+  );
+  assert.ok(response.cookies.get("pnw_session")?.value);
+});
+
+test("sync and account lookup reject anonymous and non-editor accounts", async () => {
+  const { POST: sync } =
+    require("../app/api/editor/delegates/sync/route") as typeof import("../app/api/editor/delegates/sync/route");
+  const { GET: lookup } =
+    require("../app/api/editor/delegates/lookup/route") as typeof import("../app/api/editor/delegates/lookup/route");
+  const { seal } = await import("../lib/editor/crypto");
+  const syncRequest = (origin = process.env.SITE_URL!) =>
+    new Request(`${process.env.SITE_URL}/api/editor/delegates/sync`, {
+      method: "POST",
+      headers: { origin },
+    });
+  const lookupRequest = new Request(
+    `${process.env.SITE_URL}/api/editor/delegates/lookup?userId=8184`,
+  );
+  global.fetch = async () => assert.fail("Unauthorized upstream request");
+  assert.equal((await sync(syncRequest("https://evil.test"))).status, 403);
+  assert.equal((await context("", () => sync(syncRequest()))).status, 401);
+  assert.equal((await context("", () => lookup(lookupRequest))).status, 401);
+  global.fetch = async (input) => {
+    const path = new URL(String(input)).pathname;
+    if (path === "/api/v0/me")
+      return Response.json({
+        me: {
+          id: 123,
+          name: "Delegate",
+          wca_id: null,
+          delegate_status: "delegate",
+        },
+      });
+    assert.equal(path, "/items/SiteEditors");
+    return Response.json({ data: [] });
+  };
+  const cookie = `pnw_session=${seal(
+    { accessToken: "token", expiresAt: Date.now() + 60000 },
+    "session",
+  )}`;
+  assert.equal((await context(cookie, () => sync(syncRequest()))).status, 403);
+  assert.equal(
+    (await context(cookie, () => lookup(lookupRequest))).status,
+    403,
+  );
+});

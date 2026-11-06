@@ -1,5 +1,7 @@
+import React from "react";
 import { Delegate } from "@/lib/directus";
 import { getPerson } from "@/lib/wcaApi";
+import { getWcaAccount } from "@/lib/wcaDelegates";
 import Image from "next/image";
 import { EmailButton } from "../EmailButton";
 
@@ -7,11 +9,26 @@ interface DelegateDetailsProps extends Delegate {}
 
 export async function DelegateDetails({
   wcaId,
+  wcaUserId,
+  wcaStatus,
   name,
   email,
   description,
 }: DelegateDetailsProps) {
-  const person = await getPerson(wcaId);
+  const person = await (wcaUserId
+    ? getWcaAccount(wcaUserId)
+    : wcaId
+    ? getPerson(wcaId)
+    : Promise.resolve(null)
+  ).catch(() => null);
+
+  const showEmail =
+    !!email &&
+    !!wcaStatus &&
+    wcaStatus !== "trainee_delegate" &&
+    !!person &&
+    "delegate_status" in person &&
+    person.delegate_status !== "trainee_delegate";
 
   return (
     <div className="flex flex-col sm:flex-row w-full">
@@ -28,11 +45,12 @@ export async function DelegateDetails({
             className="min-w-[5rem] sm:max-w-[15rem]"
           />
         )}
-        {email && <EmailButton email={email} />}
+        {showEmail && <EmailButton email={email} />}
       </div>
       <div className="flex flex-1 flex-col mx-4">
         <p>
-          <span className="text-2xl">{name}</span> ({wcaId})
+          <span className="text-2xl">{name}</span>
+          {wcaId ? ` (${wcaId})` : ""}
         </p>
         <p className="py-2 whitespace-pre-wrap">{description}</p>
       </div>

@@ -24,16 +24,23 @@ export const getContent = async (
 
 export async function getPublicDelegates(): Promise<Delegate[]> {
   try {
-    return await listItems<Delegate>(
+    const delegates = await listItems<Delegate>(
       "Delegates",
       {
         filter: JSON.stringify({ status: { _eq: "published" } }),
         fields:
-          "id,name,email,region,description,wcaId,status,sort,date_updated",
+          "id,name,email,region,description,wcaId,wcaUserId,wcaStatus,status,sort,date_updated",
         sort: "sort,name",
       },
       !!process.env.DIRECTUS_TOKEN,
     );
+    return delegates.map((delegate) => ({
+      ...delegate,
+      email:
+        !delegate.wcaStatus || delegate.wcaStatus === "trainee_delegate"
+          ? ""
+          : delegate.email,
+    }));
   } catch {
     return [];
   }

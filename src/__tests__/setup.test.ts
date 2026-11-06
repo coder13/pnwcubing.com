@@ -61,11 +61,14 @@ function fixture(policies: boolean) {
     } else if (path[0] === "fields") {
       if (method === "GET") data = fields.get(path[1]);
       else if (method === "PATCH") {
+        if (body.schema)
+          assert.ok(body.type, "Directus requires type with schema updates");
         const field = fields
           .get(path[1])!
           .find((field) => field.field === path[2]);
         assert.ok(field);
         field.meta = { ...(field.meta as Item), ...body.meta };
+        field.schema = { ...(field.schema as Item), ...body.schema };
       } else {
         assert.ok(
           !fields
@@ -401,4 +404,65 @@ test("a field failure reports Directus details and can resume without replacing 
     state.fields.get("FAQ")!.filter((field) => field.field === "answer").length,
     1,
   );
+});
+
+test("setup links existing delegates without changing their primary keys, content, or visibility", async () => {
+  const state = fixture(false);
+  state.fields.get("Delegates")!.push({ field: "status", type: "string" });
+  const existing = {
+    id: "old",
+    name: "Custom name",
+    wcaId: "2010TEST01",
+    region: "Custom region",
+    description: "Custom text",
+    email: "custom@example.com",
+    status: "archived",
+  };
+  state.items.set("Delegates", [{ ...existing }]);
+  const cmsFetch = global.fetch;
+  global.fetch = async (input, init) => {
+    if (new URL(String(input)).hostname === "www.worldcubeassociation.org")
+      return Response.json({
+        user: {
+          id: 123,
+          name: "WCA name",
+          wca_id: "2010TEST01",
+          region_id: 28,
+          delegate_status: "delegate",
+        },
+      });
+    return cmsFetch(input, init);
+  };
+  await setupCms();
+  const item = state.items.get("Delegates")![0];
+  for (const [key, value] of Object.entries(existing))
+    assert.equal(item[key], value);
+  assert.equal(item.wcaUserId, 123);
+  assert.equal(
+    (
+      state.fields
+        .get("Delegates")!
+        .find((field) => field.field === "wcaUserId")!.schema as Item
+    ).is_unique,
+    true,
+  );
+  const before = JSON.stringify(item);
+  await setupCms();
+  assert.equal(JSON.stringify(item), before);
+});
+
+test("conflicting numeric identities stop setup before schema or permission writes", async () => {
+  const state = fixture(false);
+  state.fields.get("Delegates")!.push({ field: "wcaUserId", type: "integer" });
+  state.items.set("Delegates", [
+    { id: "one", wcaUserId: 123 },
+    { id: "two", wcaUserId: 123 },
+  ]);
+  const cmsFetch = global.fetch;
+  global.fetch = async (input, init) => {
+    assert.equal(init?.method, "GET");
+    return cmsFetch(input, init);
+  };
+  await assert.rejects(setupCms(), /duplicate WCA user ID/);
+  assert.equal(state.permissions.length, 3);
 });

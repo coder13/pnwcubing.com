@@ -1,0 +1,4 @@
+SHELL=/bin/sh
+PATH=/usr/bin:/bin
+# Check at minute 17 of every hour in the server's timezone.
+17 * * * * root /usr/bin/flock -n /run/lock/pnw-delegate-visibility.lock /usr/bin/timeout 40m /root/directus/delegate-visibility/run-delegate-visibility.sh >> /var/log/pnw-delegate-visibility.log 2>&1

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { AuthError, requireSameOrigin, requireUser } from "@/lib/editor/auth";
 import { DirectusError } from "@/lib/editor/directus";
 import { ValidationError } from "@/lib/editor/validation";
+import { WcaDataError } from "@/lib/wcaDelegates";
 import { mutateContent } from "@/lib/editor/mutations";
 
 type Context = { params: { collection: string; id?: string[] } };
@@ -30,7 +31,9 @@ async function mutate(request: Request, { params }: Context) {
         ? error.status
         : 503;
     const message =
-      error instanceof AuthError || error instanceof ValidationError
+      error instanceof AuthError ||
+      error instanceof ValidationError ||
+      error instanceof WcaDataError
         ? error.message
         : status === 404
         ? "Content not found."

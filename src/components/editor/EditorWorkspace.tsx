@@ -1,5 +1,7 @@
 "use client";
 
+import classNames from "classnames";
+import { DelegateList, publicationClass } from "./DelegateList";
 import React, { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Delegate } from "@/lib/directus";
@@ -33,6 +35,9 @@ const labels: Record<ContentCollection, string> = {
 };
 
 export function EditorWorkspace(props: Props) {
+  const router = useRouter();
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState("");
   const [collection, setCollection] = useState<ContentCollection>("Delegates");
   const [selected, setSelected] = useState("");
   const [creating, setCreating] = useState(false);
@@ -68,6 +73,38 @@ export function EditorWorkspace(props: Props) {
     next();
   }
 
+  async function sync() {
+    if (
+      dirty &&
+      !window.confirm("Discard your unsaved changes and sync delegates?")
+    )
+      return;
+    setDirty(false);
+    setSelected("");
+    setCreating(false);
+    setSyncing(true);
+    setSyncError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/editor/delegates/sync", {
+        method: "POST",
+      });
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(result.error || "Sync failed. Try again.");
+      setNotice(
+        `Sync complete. ${result.data.added} added as hidden, ${result.data.updated} updated. ${result.data.missing} no longer in the tracked WCA list. Visibility and archive choices stayed the same.`,
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "Sync failed. Try again.",
+      );
+    } finally {
+      setSyncing(false);
+      router.refresh();
+    }
+  }
+
   return (
     <div className="space-y-5">
       {props.isEditor && (
@@ -95,11 +132,33 @@ export function EditorWorkspace(props: Props) {
       <p>
         {props.isEditor
           ? "Create or select a record. Save your changes to update Directus."
-          : "You can edit your profile details and publication status. Your WCA ID is read-only."}
+          : "You can edit your profile details and publication status. Your WCA account IDs are read-only. Either you or a full editor can show or hide your profile."}
       </p>
       <p role="status" aria-live="polite" className="text-green-800">
         {notice}
       </p>
+      {props.isEditor && collection === "Delegates" && (
+        <div className="space-y-2 rounded border p-4">
+          <button
+            type="button"
+            className={buttonClass}
+            disabled={syncing}
+            onClick={sync}
+          >
+            {syncing ? "Syncing…" : "Sync WCA delegates"}
+          </button>
+          <p className="text-sm text-gray-600">
+            Import active delegates from Pacific Northwest and Canada (West).
+            New profiles start hidden. Existing visibility, archives, and
+            profile details stay the same.
+          </p>
+          {syncError && (
+            <p role="alert" className="text-red-700">
+              {syncError}
+            </p>
+          )}
+        </div>
+      )}
       <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
         <div className="space-y-3">
           {props.isEditor && collection !== "SiteContent" && (
@@ -120,48 +179,65 @@ export function EditorWorkspace(props: Props) {
                 : "delegate"}
             </button>
           )}
-          <ul
-            className="max-h-[60vh] space-y-1 overflow-auto"
-            aria-label={labels[collection]}
-          >
-            {records.map((item) => (
-              <li key={String(item.id)}>
-                <button
-                  aria-pressed={selectedId === String(item.id)}
-                  className={`w-full rounded border p-3 text-left ${
-                    selectedId === String(item.id) && !creating
-                      ? "border-primary bg-blue-50"
-                      : "border-gray-200"
-                  }`}
-                  onClick={() =>
-                    select(() => {
-                      setSelected(String(item.id));
-                      setCreating(false);
-                    })
-                  }
-                >
-                  <span className="block font-semibold">
-                    {String(
-                      item.name ||
-                        item.question ||
-                        defaults.find((entry) => entry.id === item.id)?.label ||
-                        item.id,
+          {collection === "Delegates" ? (
+            <DelegateList
+              delegates={props.delegates}
+              selectedId={creating ? "" : selectedId}
+              onSelect={(id) =>
+                select(() => {
+                  setSelected(id);
+                  setCreating(false);
+                })
+              }
+            />
+          ) : (
+            <ul
+              className="max-h-[60vh] space-y-1 overflow-auto"
+              aria-label={labels[collection]}
+            >
+              {records.map((item) => (
+                <li key={String(item.id)}>
+                  <button
+                    aria-pressed={selectedId === String(item.id)}
+                    className={classNames(
+                      "w-full rounded border p-3 text-left",
+                      publicationClass(item.status),
+                      {
+                        "ring-2 ring-primary ring-offset-1":
+                          selectedId === String(item.id) && !creating,
+                      },
                     )}
-                  </span>
-                  <span className="text-sm text-gray-600">
-                    {String(
-                      item.status ||
-                        (item.active === false
-                          ? "Inactive"
-                          : collection === "SiteEditors"
-                          ? `WCA user ${item.id}`
-                          : ""),
-                    )}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                    onClick={() =>
+                      select(() => {
+                        setSelected(String(item.id));
+                        setCreating(false);
+                      })
+                    }
+                  >
+                    <span className="block font-semibold">
+                      {String(
+                        item.name ||
+                          item.question ||
+                          defaults.find((entry) => entry.id === item.id)
+                            ?.label ||
+                          item.id,
+                      )}
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      {String(
+                        item.status ||
+                          (item.active === false
+                            ? "Inactive"
+                            : collection === "SiteEditors"
+                            ? `WCA user ${item.id}`
+                            : ""),
+                      )}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
           {!records.length && !creating && (
             <p>
               {props.isEditor
@@ -225,14 +301,16 @@ function RecordForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState(false);
+  const [wcaStatus, setWcaStatus] = useState(String(record?.wcaStatus || ""));
   const fields: Record<ContentCollection, RecordData> = {
     Delegates: {
       name: "",
+      wcaUserId: "",
       wcaId: "",
       email: "",
       region: "",
       description: "",
-      status: "draft",
+      status: "hidden",
       sort: 0,
     },
     FAQ: { question: "", answer: "", status: "draft", sort: 0 },
@@ -243,7 +321,11 @@ function RecordForm({
     Object.fromEntries(
       Object.entries(fields[collection]).map(([key, fallback]) => [
         key,
-        record?.[key] ?? fallback,
+        key === "status" &&
+        collection === "Delegates" &&
+        record?.status === "draft"
+          ? "hidden"
+          : record?.[key] ?? fallback,
       ]),
     ),
   );
@@ -251,6 +333,37 @@ function RecordForm({
   function field(name: string, value: string | number | boolean) {
     setValues((current) => ({ ...current, [name]: value }));
     onDirty(true);
+  }
+  async function lookup() {
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/editor/delegates/lookup?userId=${encodeURIComponent(
+          String(values.wcaUserId),
+        )}`,
+      );
+      const result = await response.json();
+      if (!response.ok)
+        throw new Error(result.error || "The WCA account could not load.");
+      setWcaStatus(result.data.wcaStatus);
+      setValues((current) => ({
+        ...current,
+        wcaId: result.data.wcaId,
+        ...(!record
+          ? { name: result.data.name, email: result.data.email }
+          : {}),
+      }));
+      onDirty(true);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "The WCA account could not load.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -277,7 +390,10 @@ function RecordForm({
                 body: JSON.stringify(
                   Object.fromEntries(
                     Object.entries(values).filter(
-                      ([name]) => isEditor || name !== "wcaId",
+                      ([name]) =>
+                        collection !== "Delegates" ||
+                        (name !== "wcaId" &&
+                          (isEditor || name !== "wcaUserId")),
                     ),
                   ),
                 ),
@@ -328,6 +444,34 @@ function RecordForm({
           Use the numeric WCA user ID.
         </p>
       )}
+      {collection === "Delegates" && (
+        <div className="space-y-1 text-sm text-gray-600">
+          <p>
+            WCA region: {String(record?.wcaRegion || "Additional delegate")}.
+            The local region below is separate.
+          </p>
+          <p>
+            Either the delegate or a full editor can publish or hide this
+            profile. Only a full editor can archive or restore it.
+          </p>
+          <p>
+            WCA role:{" "}
+            {wcaStatus ? wcaStatus.replaceAll("_", " ") : "Not loaded"}.
+          </p>
+          {wcaStatus === "trainee_delegate" && (
+            <p className="font-semibold text-amber-900">
+              Trainee delegate emails stay private and do not appear on the
+              public page.
+            </p>
+          )}
+          {!record && (
+            <p>
+              Add any WCA account by its numeric user ID. A competitor ID is
+              optional.
+            </p>
+          )}
+        </div>
+      )}
       {locked && (
         <p>This account has permanent access through the site configuration.</p>
       )}
@@ -339,7 +483,9 @@ function RecordForm({
           const label =
             (
               {
-                wcaId: "WCA ID",
+                wcaId: "WCA competitor ID",
+                wcaUserId: "WCA user ID (number)",
+                region: "Local region",
                 id: "WCA user ID (number)",
                 description: "Blurb",
                 body: "Content (HTML)",
@@ -368,9 +514,14 @@ function RecordForm({
                   value={String(value)}
                   onChange={(event) => field(name, event.target.value)}
                 >
-                  <option value="draft">Draft</option>
+                  {collection !== "Delegates" && (
+                    <option value="draft">Draft</option>
+                  )}
                   <option value="published">Published</option>
                   <option value="hidden">Hidden</option>
+                  {collection === "Delegates" && isEditor && (
+                    <option value="archived">Archived</option>
+                  )}
                 </select>
               ) : ["body", "answer", "description"].includes(name) ? (
                 <textarea
@@ -388,28 +539,27 @@ function RecordForm({
                   id={fieldId}
                   className={`${inputClass} read-only:bg-gray-100 read-only:text-gray-600`}
                   type={
-                    name === "sort" || name === "id"
+                    name === "sort" || name === "id" || name === "wcaUserId"
                       ? "number"
                       : name === "email"
                       ? "email"
                       : "text"
                   }
-                  min={name === "id" ? 1 : 0}
+                  min={name === "id" || name === "wcaUserId" ? 1 : 0}
                   maxLength={300}
-                  readOnly={!isEditor && name === "wcaId"}
-                  required={[
-                    "name",
-                    "wcaId",
-                    "region",
-                    "question",
-                    "id",
-                  ].includes(name)}
+                  readOnly={
+                    name === "wcaId" ||
+                    (name === "wcaUserId" && (!isEditor || !!record?.wcaUserId))
+                  }
+                  required={["name", "wcaUserId", "question", "id"].includes(
+                    name,
+                  )}
                   list={name === "region" ? "delegate-regions" : undefined}
                   value={String(value)}
                   onChange={(event) =>
                     field(
                       name,
-                      name === "sort" || name === "id"
+                      name === "sort" || name === "id" || name === "wcaUserId"
                         ? event.target.value === ""
                           ? ""
                           : Number(event.target.value)
@@ -418,6 +568,18 @@ function RecordForm({
                   }
                 />
               )}
+              {collection === "Delegates" &&
+                name === "wcaUserId" &&
+                isEditor &&
+                !record?.wcaUserId && (
+                  <button
+                    type="button"
+                    className="rounded border px-3 py-2"
+                    onClick={lookup}
+                  >
+                    Look up WCA account
+                  </button>
+                )}
             </div>
           );
         })}
@@ -455,15 +617,18 @@ function RecordForm({
           <button type="submit" className={buttonClass}>
             {busy ? "Saving…" : "Save changes"}
           </button>
-          {isEditor && record && collection !== "SiteContent" && (
-            <button
-              type="button"
-              className="rounded border border-red-700 px-4 py-2 text-red-700"
-              onClick={() => mutate("DELETE")}
-            >
-              Delete
-            </button>
-          )}
+          {isEditor &&
+            record &&
+            collection !== "SiteContent" &&
+            collection !== "Delegates" && (
+              <button
+                type="button"
+                className="rounded border border-red-700 px-4 py-2 text-red-700"
+                onClick={() => mutate("DELETE")}
+              >
+                Delete
+              </button>
+            )}
         </div>
       </fieldset>
       {error && (

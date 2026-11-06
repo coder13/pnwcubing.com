@@ -14,5 +14,5 @@ export function isDelegate(user: WcaUser): boolean {
 }
 
 export function canEditDelegate(user: WcaUser, delegate: Delegate): boolean {
-  return isDelegate(user) && !!user.wca_id && user.wca_id === delegate.wcaId;
+  return user.id === delegate.wcaUserId && delegate.status !== "archived";
 }

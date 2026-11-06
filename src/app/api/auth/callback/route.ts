@@ -4,13 +4,13 @@ import {
   cookieOptions,
   fetchWcaUser,
   isContentEditor,
+  hasDelegateProfile,
   oauthCookie,
   OAuthState,
   sessionCookie,
 } from "@/lib/editor/auth";
 import { requiredEnv, siteOrigin } from "@/lib/editor/config";
 import { seal, unseal } from "@/lib/editor/crypto";
-import { isDelegate } from "@/lib/editor/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -61,7 +61,10 @@ export async function GET(request: Request) {
       throw new Error("Invalid access token");
     }
     const user = await fetchWcaUser(token.access_token);
-    if (!(await isContentEditor(user.id)) && !isDelegate(user)) {
+    if (
+      !(await isContentEditor(user.id)) &&
+      !(await hasDelegateProfile(user.id))
+    ) {
       response.headers.set("Location", `${siteOrigin()}/login?error=access`);
       response.cookies.set(sessionCookie, "", {
         ...cookieOptions(),

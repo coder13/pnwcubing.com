@@ -4,16 +4,16 @@ The private editor is at `/login` or `/admin`. The public menu has no login link
 
 ## Access
 
-| Account                                                | Access               |
-| ------------------------------------------------------ | -------------------- |
-| Current WCA delegate with a matching `Delegates.wcaId` | Edit their own profile |
-| Active user in `SiteEditors`                           | Full content access  |
-| User listed in `CONTENT_EDITOR_WCA_IDS`                | Full content access  |
-| Other account                                          | No editor access     |
+| Account                                                       | Access                 |
+| ------------------------------------------------------------- | ---------------------- |
+| WCA account with a matching, unarchived `Delegates.wcaUserId` | Edit their own profile |
+| Active user in `SiteEditors`                                  | Full content access    |
+| User listed in `CONTENT_EDITOR_WCA_IDS`                       | Full content access    |
+| Other account                                                 | No editor access       |
 
-A WCA user ID is a number, such as `8184`. A WCA competitor ID is a different value, such as `2010TEST01`. The editor list uses numeric user IDs. Delegate ownership uses the verified competitor ID from WCA.
+A WCA user ID is a number, such as `8184`. A WCA competitor ID is a different value, such as `2010TEST01`. The editor list uses numeric user IDs. Delegate ownership uses the numeric user ID from the authenticated WCA account. A competitor ID is optional. Names and email addresses do not determine ownership.
 
-Full editors can add, edit, delete, publish, hide, and reorder delegates and FAQ questions. They can change delegate regions and contact details. They can edit the home cards, page headings, About, contact information, parent information, competition guidance, and delegate introduction. Competition results and upcoming competitions still come from WCA. Site layout and navigation remain in code.
+Full editors can add, edit, archive, restore, publish, hide, and reorder delegates. They can add, edit, delete, publish, hide, and reorder FAQ questions. They can change delegate regions and contact details. They can edit the home cards, page headings, About, contact information, parent information, competition guidance, and delegate introduction. Competition results and upcoming competitions still come from WCA. Site layout and navigation remain in code.
 
 Regions are text fields. Select an existing region or enter a new region. Smaller display order numbers appear first.
 
@@ -31,7 +31,7 @@ Use separate OAuth credentials for a preview deployment. Set its exact origin in
 
 The website uses the authorization code flow with state and PKCE. It requests only the public WCA scope. The access token stays in an encrypted, HttpOnly session cookie. The browser cannot read it. The session expires with the WCA token, within eight hours at most. Closing a browser session removes the cookie unless the browser restores that session.
 
-The server reads the current WCA profile for each editor page and save. It also reads editor access on each request. A role removal takes effect on the next request. A delegate can edit their own name, email, region, blurb, publication status, and display order. The WCA ID appears as a read-only field for delegates. Only full editors can change a profile's WCA ID, add profiles, or delete profiles.
+The server reads the current WCA profile for each editor page and save. It also reads editor access on each request. A removal of full editor access takes effect on the next request. An unarchived delegate profile still grants access to that profile, even after a WCA role ends. A delegate can edit their own name, email, region, blurb, publication status, and display order. Both WCA IDs appear as read-only fields after the account is linked. Only full editors can add, archive, or restore profiles. Either the delegate or a full editor can publish or hide an unarchived profile.
 
 If a delegate has one matching profile, the editor selects it automatically. Delegates cannot edit other profiles or other content collections.
 
@@ -60,7 +60,7 @@ Setup also configures `SiteEditors.active` to return Boolean values. This lets t
 
 If Directus rejects a field change, the error now names the field and includes the Directus error code and message. Keep the existing collections and records. Run `yarn cms:check` to inspect the schema before a retry.
 
-The script keeps existing delegate names and blurbs. It adds `status` and `sort`, then marks existing delegate records as published. It creates the following collections:
+The script keeps existing delegate content and primary keys. It links each legacy competitor ID to a numeric `wcaUserId` through the public WCA account endpoint. It requires unique numeric IDs and stops before changes if identities conflict. If a record has neither ID, the editor must link it manually. Existing publication states stay unchanged. Only records from before the original publication feature receive an initial published state. It creates the following collections:
 
 | Collection    | Purpose                                                      |
 | ------------- | ------------------------------------------------------------ |
@@ -115,6 +115,8 @@ Deploy the branch after CMS setup. Open `/login` and sign in with WCA. Use Edito
 | FAQ question | Private            | Public     | Private       |
 | Page section | Original site text | Saved HTML | Blank section |
 
+Archived delegates remain private. Only a full editor can restore them. The editor groups legacy draft delegates with Hidden profiles.
+
 A save takes effect immediately for a published record. Drafts replace the saved record. They do not retain a separate published revision. For a page section, keep Published selected when you update live copy. To prepare changes separately, use Directus content versions outside this editor.
 
 Page sections have an HTML field and a preview. The website removes scripts, event handlers, unsafe URLs, and forms. Video frames can use only the supported YouTube hosts. Existing Tailwind classes remain available. New classes require a code change and rebuild. FAQ answers and delegate blurbs use plain text.
@@ -136,7 +138,7 @@ The automated checks use mocked WCA and Directus responses. They cover ownership
 For a live acceptance check:
 
 1. Sign in as an active full editor.
-2. Add a draft delegate with a valid WCA ID.
+2. Add a hidden delegate with a numeric WCA user ID.
 3. Change the region and blurb, then publish the profile.
 4. Open `/delegates` and find the profile in its region.
 5. Hide the profile and make sure that it disappears.
@@ -146,3 +148,41 @@ For a live acceptance check:
 9. Sign in as a delegate and edit that delegate's profile. Make sure that the WCA ID is read-only.
 10. Sign in with an unrelated WCA account and make sure that access is refused.
 11. Sign out and make sure that the editor redirects to `/login`.
+
+## Sync delegates
+
+Run `yarn cms:setup` before you deploy this version. Setup adds `wcaUserId`, `wcaRegionId`, `wcaRegion`, `wcaActive`, and `wcaStatus`. The existing Directus primary key stays unchanged. The website service account still uses the same collection permissions.
+
+In the delegate editor, select Sync WCA delegates. Sync reads all active roles for WCA region 28, Pacific Northwest, and region 114, Canada (West). These are the WCA names for the requested US Northwest and western Canada regions. The public WCA API provides the [region roles](https://www.worldcubeassociation.org/api/v0/user_roles?groupType=delegate_regions&isActive=true&groupId=28).
+
+New profiles start hidden and use the public WCA email when available. Sync refreshes WCA region details, the WCA role, and the optional competitor ID. It preserves existing names, email addresses, local regions, blurbs, display orders, visibility, and archives. If someone leaves the tracked lists, the editor shows a notice on their card. Sync does not archive, hide, delete, or publish that profile.
+
+If a sync stops partway through, run it again. Unique WCA user IDs prevent duplicate profiles. The command reads both complete WCA lists before it writes any records.
+
+To add someone outside these regions, select Add delegate. Enter their numeric WCA user ID and select Look up WCA account. Review their profile and save it. The account needs no competitor ID or current WCA delegate role. New profiles default to hidden.
+
+The dashboard groups published profiles by WCA region, with a separate Additional delegates group. Hidden profiles and archived profiles have their own sections. Published cards are green, hidden cards are amber, and archived cards are gray. Each card also shows its state as text. The editable local region still controls grouping on the public directory.
+
+Trainee delegate emails never appear on the public directory, including manually entered emails. The editor shows a notice beside their profile details. The WCA public API omits trainee emails, so imported trainee profiles start with a blank email. Existing edited emails stay unchanged during sync. If the website cannot confirm the current WCA role, it hides the contact email until WCA responds again.
+
+## Automatic visibility check
+
+The Directus server runs `scripts/update-delegate-visibility.mjs` hourly at minute 17. It checks each published profile through the public WCA user endpoint. If WCA confirms that the account has no current delegate role, the job changes Published to Hidden. This rule also applies to additional delegates. A move to another WCA region does not hide a profile. Trainees count as active delegates.
+
+The job never publishes, archives, deletes, or restores profiles. Hidden and archived profiles stay unchanged. If a WCA request fails, returns a missing account, or returns an unknown role, the job stops before any updates. Every WCA check completes before the first update. If a CMS write fails partway through, a later run completes the remaining updates.
+
+Either the delegate or a full editor can still change visibility. The next hourly check hides a published profile again if the person has no current WCA delegate role. Returning delegates remain hidden until someone publishes them.
+
+The standalone job uses Node 18 or later and needs no website packages. The server stores it at `/root/directus/delegate-visibility`. Its private `job.env` file supplies `DIRECTUS_URL` and `DIRECTUS_TOKEN`. The job account can read only delegate IDs, WCA user IDs, and publication states. It can update only the status of published records, and the new status must be hidden. Administrator and Data Studio access are disabled.
+
+The schedule is `/etc/cron.d/pnw-delegate-visibility`. The repository copy is `scripts/cron/pnw-delegate-visibility`. A file lock prevents overlapping runs. Logs go to `/var/log/pnw-delegate-visibility.log`, with weekly rotation and four retained files. Logs contain counts and times, without account tokens or email addresses.
+
+To inspect the job on the Directus server, run:
+
+```bash
+/root/directus/delegate-visibility/run-delegate-visibility.sh --dry-run
+tail -20 /var/log/pnw-delegate-visibility.log
+cat /etc/cron.d/pnw-delegate-visibility
+```
+
+To update the installed job, copy `scripts/update-delegate-visibility.mjs` and `scripts/run-delegate-visibility.sh` into the server directory. Keep `job.env` private with mode `600`. Run the dry check before the next scheduled run. To disable the job, move its schedule file out of `/etc/cron.d`.

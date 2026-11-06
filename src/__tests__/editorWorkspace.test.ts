@@ -10,6 +10,7 @@ const delegate: Delegate = {
   id: "1",
   name: "Test Delegate",
   wcaId: "2010TEST01",
+  wcaUserId: 123,
   email: "delegate@example.com",
   region: "Washington",
   description: "Existing blurb",
@@ -57,12 +58,16 @@ test("a delegate's single profile opens with all normal fields and a read-only W
     "status",
     "sort",
     "wcaId",
+    "wcaUserId",
   ]) {
     const field = html.match(
       new RegExp(`<[^>]+id="editor-Delegates-${name}"[^>]*>`),
     )?.[0];
     assert.ok(field, `The ${name} field is visible.`);
-    assert.equal(field.includes("readonly"), name === "wcaId");
+    assert.equal(
+      field.includes("readonly"),
+      ["wcaId", "wcaUserId"].includes(name),
+    );
     assert.ok(!field.includes("disabled"));
   }
   assert.ok(html.includes(delegate.wcaId));
@@ -84,4 +89,63 @@ test("full editors keep the list selection workflow", () => {
   assert.ok(html.includes("Content types"));
   assert.ok(html.includes("Select a record to edit it."));
   assert.ok(!html.includes("editor-Delegates-name"));
+});
+
+test("delegate cards use distinct state colors, visible labels, and region groups", () => {
+  const html = render(
+    [
+      { ...delegate, wcaRegionId: 28, wcaRegion: "Pacific Northwest" },
+      {
+        ...delegate,
+        id: "2",
+        wcaUserId: 456,
+        name: "Canadian delegate",
+        wcaRegionId: 114,
+        wcaRegion: "Canada (West)",
+      },
+      {
+        ...delegate,
+        id: "3",
+        wcaUserId: 789,
+        name: "Hidden delegate",
+        status: "hidden",
+      },
+      {
+        ...delegate,
+        id: "4",
+        wcaUserId: 999,
+        name: "Archived delegate",
+        status: "archived",
+      },
+    ],
+    true,
+  );
+  for (const label of [
+    "Pacific Northwest",
+    "Canada (West)",
+    "Additional delegates",
+    "Hidden",
+    "Archived",
+  ])
+    assert.ok(html.includes(`aria-label="${label}"`));
+  for (const color of ["bg-green-50", "bg-amber-50", "bg-gray-100"])
+    assert.ok(html.includes(color));
+  for (const label of ["Published", "Hidden", "Archived"])
+    assert.ok(html.includes(`>${label}</span>`));
+  assert.ok(html.includes("Sync WCA delegates"));
+});
+
+test("accounts without competitor IDs can edit their profile without a required competitor field", () => {
+  const html = render([{ ...delegate, wcaId: "", wcaRegionId: null }]);
+  const field = html.match(/<input[^>]+id="editor-Delegates-wcaId"[^>]*>/)![0];
+  assert.ok(field.includes("readonly"));
+  assert.ok(!field.includes("required"));
+  assert.ok(!html.includes("Sync WCA delegates"));
+  assert.ok(!html.includes('value="archived"'));
+});
+
+test("trainee editors see that their email will stay private", () => {
+  const html = render([{ ...delegate, wcaStatus: "trainee_delegate" }]);
+  assert.ok(html.includes("Trainee delegate emails stay private"));
+  assert.ok(html.includes('id="editor-Delegates-email"'));
 });

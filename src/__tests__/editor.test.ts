@@ -36,6 +36,7 @@ const delegate = {
   id: "1",
   name: "Test Delegate",
   wcaId: user.wca_id,
+  wcaUserId: user.id,
   email: "test@example.com",
   region: "Washington",
   description: "Old blurb",
@@ -83,48 +84,47 @@ test("sessions are encrypted, expire, reject tampering, and bind their purpose",
   );
 });
 
-test("only verified delegates with a matching WCA ID own a profile", () => {
+test("numeric WCA accounts own profiles even without competitor IDs or a current delegate role", () => {
   assert.equal(canEditDelegate(user, delegate), true);
   assert.equal(
-    canEditDelegate({ ...user, delegate_status: null }, delegate),
-    false,
+    canEditDelegate({ ...user, delegate_status: null, wca_id: null }, delegate),
+    true,
   );
+  assert.equal(canEditDelegate({ ...user, id: 999 }, delegate), false);
+  assert.equal(canEditDelegate(user, { ...delegate, wcaUserId: null }), false);
   assert.equal(
-    canEditDelegate({ ...user, wca_id: "2011TEST01" }, delegate),
+    canEditDelegate(user, { ...delegate, status: "archived" }),
     false,
   );
-  assert.equal(canEditDelegate({ ...user, wca_id: null }, delegate), false);
   assert.equal(
     isDelegate({ ...user, delegate_status: "former_delegate" }),
     false,
   );
-  assert.equal(
-    isDelegate({ ...user, delegate_status: "trainee_delegate" }),
-    true,
-  );
 });
 
 test("delegates can edit normal profile fields but not identity or system fields", () => {
-  assert.deepEqual(validateDelegateProfile(profile, delegate.wcaId), profile);
-  for (const field of ["wcaId", "id", "active", "date_updated"]) {
+  assert.deepEqual(validateDelegateProfile(profile), profile);
+  for (const field of [
+    "wcaId",
+    "wcaUserId",
+    "wcaActive",
+    "wcaRegionId",
+    "id",
+    "active",
+    "date_updated",
+  ]) {
     assert.throws(() =>
-      validateDelegateProfile(
-        { ...profile, [field]: "changed" },
-        delegate.wcaId,
-      ),
+      validateDelegateProfile({ ...profile, [field]: "changed" }),
     );
   }
   for (const invalid of [
     { email: "invalid-email" },
     { name: "" },
-    { region: "" },
     { description: "x".repeat(10001) },
     { sort: -1 },
     { status: "public" },
   ])
-    assert.throws(() =>
-      validateDelegateProfile({ ...profile, ...invalid }, delegate.wcaId),
-    );
+    assert.throws(() => validateDelegateProfile({ ...profile, ...invalid }));
 });
 
 test("editor validation rejects unknown fields, invalid statuses, IDs, and orders", () => {
@@ -220,11 +220,11 @@ test("a delegate save checks ownership and updates all editable profile fields",
   assert.deepEqual(JSON.parse(String(writes[1].body)), profile);
 });
 
-test("forged owner IDs, former delegates, and non-owners cannot save", async () => {
+test("forged owner IDs, archived profiles, and non-owners cannot save", async () => {
   let mutations = 0;
   global.fetch = async (_url, init) => {
     if (init?.method) mutations++;
-    return upstream({ ...delegate, wcaId: "2011TEST01" });
+    return upstream({ ...delegate, wcaUserId: 999 });
   };
   await assert.rejects(
     mutateContent(
@@ -235,7 +235,7 @@ test("forged owner IDs, former delegates, and non-owners cannot save", async () 
     ),
     /own delegate profile/,
   );
-  global.fetch = async () => upstream(delegate);
+  global.fetch = async () => upstream({ ...delegate, status: "archived" });
   await assert.rejects(
     mutateContent(
       request("PATCH", { description: "New" }),
@@ -367,38 +367,17 @@ test("delegate saves reject WCA ID changes before writing to Directus", async ()
   }
 });
 
-test("full editors can create, move, publish, hide, and delete content", async () => {
-  const writes: { method?: string; body: unknown }[] = [];
+test("full editors can publish and hide content and manage editor access", async () => {
+  const writes: string[] = [];
   global.fetch = async (url, init) => {
-    if (new URL(String(url)).pathname === "/items/SiteContent" && !init?.method)
-      return upstream([]);
-    writes.push({
-      method: init?.method,
-      body: init?.body ? JSON.parse(String(init.body)) : undefined,
-    });
-    return init?.method === "DELETE"
-      ? new Response(null, { status: 204 })
-      : upstream({ id: "1" });
+    if (!init?.method) return upstream([]);
+    writes.push(init.method);
+    return upstream({ id: "1" });
   };
-  const admin = { user: { ...user, id: 8184 }, isEditor: true };
-  const { id: _id, ...record } = delegate;
-  await mutateContent(request("POST", record), "Delegates", undefined, admin);
-  await mutateContent(
-    request("PATCH", { ...record, region: "Oregon", status: "published" }),
-    "Delegates",
-    ["1"],
-    admin,
-  );
-  await mutateContent(
-    request("PATCH", { ...record, status: "hidden" }),
-    "Delegates",
-    ["1"],
-    admin,
-  );
-  await mutateContent(request("DELETE"), "Delegates", ["1"], admin);
+  const admin = { user, isEditor: true };
   await mutateContent(
     request("POST", {
-      question: "New question",
+      question: "New",
       answer: "Answer",
       status: "draft",
       sort: 2,
@@ -419,10 +398,7 @@ test("full editors can create, move, publish, hide, and delete content", async (
     undefined,
     admin,
   );
-  assert.deepEqual(
-    writes.map((write) => write.method),
-    ["POST", "PATCH", "PATCH", "DELETE", "POST", "PATCH", "POST"],
-  );
+  assert.deepEqual(writes, ["POST", "PATCH", "POST"]);
 });
 
 test("an environment editor cannot be revoked through editor access", async () => {

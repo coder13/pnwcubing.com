@@ -14,13 +14,13 @@ export default function Login({
     <main className="mx-auto max-w-xl space-y-6 p-6">
       <h1 className="text-3xl font-bold">Editor login</h1>
       <p>
-        Delegates can edit their own blurb. Approved editors can manage site
-        content.
+        Delegates can edit their own profile and visibility. Approved editors
+        can manage site content.
       </p>
       {searchParams.error && (
         <p role="alert" className="text-red-700">
           {searchParams.error === "access"
-            ? "This WCA account is not a current delegate or an approved editor."
+            ? "This WCA account has no active delegate profile or editor access here."
             : "Login failed or expired. Try again."}
         </p>
       )}

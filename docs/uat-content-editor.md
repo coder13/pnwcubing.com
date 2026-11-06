@@ -41,3 +41,17 @@ The live checks passed:
 - The temporary FAQ and delegate records were removed after the checks.
 
 The local login route reached the WCA authorization endpoint. These API checks used test identities for ownership checks. The production build passed. API checks do not replace a real WCA sign-in and the full editor browser checks.
+
+## Numeric accounts and WCA sync
+
+The new automated checks passed on November 5, 2026. The suite contains 71 tests. ESLint, TypeScript, and the production build also passed.
+
+The checks cover numeric ownership without competitor IDs, additional accounts, protected identities, and shared visibility controls. They also cover complete WCA pagination, duplicate prevention, failed imports, and repeat sync. New profiles use public WCA emails. Trainee emails stay out of public data and rendered contact buttons, including manually entered values. The dashboard tests cover region groups, automatic profile selection, and status colors.
+
+Live setup linked all 15 original profiles to unique WCA user IDs. Their original content, primary keys, and publication states stayed unchanged. A later role update preserved all 35 profiles present at that time. Both tracked WCA region lists loaded through the public API. The restricted website token read the new fields, and user 8184 retained full editor access.
+
+The updated production preview runs at `http://localhost:3000`. The public directory and login page responded successfully. The browser redirected an anonymous editor visit to login. The new authenticated browser flow still needs a manual preview.
+
+The hourly visibility job passed four additional automated checks, for 75 tests in total. These cover confirmed retirement, active roles including trainees, dry runs, WCA failures, and a profile archived during a check. TypeScript and ESLint also passed after this change.
+
+The job is installed on the Directus server with an hourly cron schedule, a file lock, and log rotation. Its first live run checked eight published profiles and hid zero profiles. A live conditional update with an empty target also passed without changing content. The job account has exactly two delegate-only permission rules, with hide-only updates and no administrator or Data Studio access.

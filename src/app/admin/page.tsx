@@ -5,7 +5,6 @@ import { EditorWorkspace } from "@/components/editor/EditorWorkspace";
 import { AuthError, currentUser } from "@/lib/editor/auth";
 import { bootstrapEditorIds } from "@/lib/editor/config";
 import { listItems } from "@/lib/editor/directus";
-import { isDelegate } from "@/lib/editor/permissions";
 import type { Delegate } from "@/lib/directus";
 import type { FAQItem, SiteContent, SiteEditor } from "@/lib/editor/types";
 
@@ -25,12 +24,16 @@ export default async function Admin() {
   }
   if (!identity) redirect("/login");
   const { user, isEditor } = identity;
-  if (!isEditor && !isDelegate(user)) redirect("/login?error=access");
 
   try {
     const delegates = await listItems<Delegate>("Delegates", {
       ...(!isEditor
-        ? { filter: JSON.stringify({ wcaId: { _eq: user.wca_id || "" } }) }
+        ? {
+            filter: JSON.stringify({
+              wcaUserId: { _eq: user.id },
+              status: { _neq: "archived" },
+            }),
+          }
         : {}),
       sort: "sort,name",
     });

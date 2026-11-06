@@ -101,3 +101,41 @@ test("every page section and original FAQ has a nonempty fallback", () => {
     defaultFaq.every((item) => item.question.trim() && item.answer.trim()),
   );
 });
+
+test("public delegate data omits trainee emails, including manually entered values", async () => {
+  global.fetch = async () =>
+    Response.json({
+      data: [
+        {
+          id: 1,
+          status: "published",
+          wcaStatus: "trainee_delegate",
+          email: "private@example.com",
+        },
+        {
+          id: 2,
+          status: "published",
+          wcaStatus: "delegate",
+          email: "public@example.com",
+        },
+        {
+          id: 3,
+          status: "published",
+          wcaStatus: null,
+          email: "unverified@example.com",
+        },
+        {
+          id: 4,
+          status: "published",
+          wcaStatus: "none",
+          email: "additional@example.com",
+        },
+      ],
+    });
+  const delegates = await getPublicDelegates();
+  assert.deepEqual(
+    delegates.map((row) => row.email),
+    ["", "public@example.com", "", "additional@example.com"],
+  );
+  assert.ok(!JSON.stringify(delegates).includes("private@example.com"));
+});

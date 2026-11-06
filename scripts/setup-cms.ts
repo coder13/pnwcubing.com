@@ -7,6 +7,9 @@ import {
   resolveFaqFields,
 } from "../src/lib/editor/faqFields";
 
+import type { Delegate } from "../src/lib/directus";
+import { planDelegateLinks } from "../src/lib/editor/delegateIdentity";
+
 loadEnvConfig(process.cwd());
 const baseUrl = process.env.DIRECTUS_URL || "https://admin.pnwcubing.com";
 
@@ -126,7 +129,39 @@ type Collection = {
 const definitions = [
   {
     collection: "Delegates",
-    fields: [publication, sort],
+    fields: [
+      {
+        ...publication,
+        schema: { default_value: "hidden", is_nullable: false },
+        meta: {
+          interface: "select-dropdown",
+          options: {
+            choices: ["published", "hidden", "archived", "draft"].map(
+              (value) => ({ text: value, value }),
+            ),
+          },
+        },
+      },
+      sort,
+      {
+        field: "wcaUserId",
+        type: "integer",
+        schema: { is_unique: true, is_nullable: true },
+        meta: {
+          interface: "input",
+          note: "Stable WCA account ID. Do not change after linking.",
+        },
+      },
+      { ...text("wcaRegionId", "integer"), schema: { is_nullable: true } },
+      { ...text("wcaRegion"), schema: { is_nullable: true } },
+      { ...text("wcaStatus"), schema: { is_nullable: true } },
+      {
+        field: "wcaActive",
+        type: "boolean",
+        schema: { is_nullable: true },
+        meta: { interface: "boolean", special: ["cast-boolean"] },
+      },
+    ],
     note: "Delegate profiles. The website publishes only published records.",
   },
   {
@@ -230,6 +265,32 @@ async function ensureCollection(
         console.log(`Adding ${collection}.${field.field} (${field.type}).`);
         await api(`/fields/${collection}`, "POST", field);
         console.log(`Added ${collection}.${field.field}.`);
+      } else if (
+        collection === "Delegates" &&
+        field.field === "wcaUserId" &&
+        existing.schema?.is_unique !== true
+      ) {
+        await api(`/fields/${collection}/${field.field}`, "PATCH", {
+          type: existing.type,
+          schema: { is_unique: true },
+        });
+        console.log("Required unique WCA user IDs for delegates.");
+      } else if (collection === "Delegates" && field.field === "status") {
+        const choices =
+          (
+            existing.meta?.options as
+              | { choices?: { value: string }[] }
+              | undefined
+          )?.choices || [];
+        if (
+          !choices.some((choice) => choice.value === "archived") ||
+          existing.schema?.default_value !== "hidden"
+        )
+          await api(`/fields/${collection}/${field.field}`, "PATCH", {
+            meta: field.meta,
+            type: existing.type,
+            schema: { default_value: "hidden" },
+          });
       } else if (field.type === "boolean") {
         const special = Array.isArray(existing.meta?.special)
           ? existing.meta.special
@@ -306,7 +367,18 @@ export async function setupCms({ checkOnly = false } = {}) {
         fields,
       );
   }
+  const existingDelegates = await api<Delegate[]>("/items/Delegates?limit=-1");
+  const identityPlan = await planDelegateLinks(existingDelegates);
+  if (identityPlan.unresolved.length)
+    console.log(
+      `Delegate records need a numeric WCA user ID in the editor: ${identityPlan.unresolved.join(
+        ", ",
+      )}. Existing content will stay unchanged.`,
+    );
   if (checkOnly) {
+    console.log(
+      `${identityPlan.updates.length} delegate records need WCA account details.`,
+    );
     console.log("Schema check passed. No changes were made.");
     return;
   }
@@ -362,6 +434,16 @@ export async function setupCms({ checkOnly = false } = {}) {
     collections,
     delegateFields,
   );
+  for (const update of identityPlan.updates) {
+    await api(
+      `/items/Delegates/${encodeURIComponent(update.id)}`,
+      "PATCH",
+      update.body,
+    );
+    console.log(
+      `Updated WCA account details for delegate record ${update.id}.`,
+    );
+  }
   for (const delegate of legacyDelegates) {
     await api(
       `/items/Delegates/${encodeURIComponent(String(delegate.id))}`,

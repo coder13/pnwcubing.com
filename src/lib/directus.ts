@@ -9,7 +9,12 @@ export interface Delegate {
   description: string;
   date_updated: string;
   wcaId: string;
-  status: "draft" | "published" | "hidden";
+  wcaUserId: number | null;
+  wcaRegionId?: number | null;
+  wcaRegion?: string | null;
+  wcaActive?: boolean | null;
+  wcaStatus?: string | null;
+  status: "draft" | "published" | "hidden" | "archived";
   sort: number;
 }
 

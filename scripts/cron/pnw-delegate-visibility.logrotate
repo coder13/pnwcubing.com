@@ -1,0 +1,8 @@
+/var/log/pnw-delegate-visibility.log {
+  weekly
+  rotate 4
+  compress
+  missingok
+  notifempty
+  create 0600 root root
+}

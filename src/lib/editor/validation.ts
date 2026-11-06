@@ -12,15 +12,7 @@ export function validateContent(
     throw new ValidationError("Enter a valid record.");
   const input = value as Record<string, unknown>;
   const fields: Record<ContentCollection, string[]> = {
-    Delegates: [
-      "name",
-      "wcaId",
-      "email",
-      "region",
-      "description",
-      "status",
-      "sort",
-    ],
+    Delegates: ["name", "email", "region", "description", "status", "sort"],
     FAQ: ["question", "answer", "status", "sort"],
     SiteContent: ["body", "status"],
     SiteEditors: ["name", "active"],
@@ -58,21 +50,18 @@ export function validateContent(
             : 300)
       )
         throw new ValidationError(`Enter a valid ${field}.`);
-      if (
-        ["name", "region", "question", "wcaId"].includes(field) &&
-        !value.trim()
-      )
+      if (["name", "question"].includes(field) && !value.trim())
         throw new ValidationError(`Enter ${field}.`);
     }
   }
   if (
     "status" in input &&
-    !statuses.includes(input.status as (typeof statuses)[number])
+    !(
+      collection === "Delegates" ? [...statuses, "archived"] : statuses
+    ).includes(input.status as (typeof statuses)[number])
   )
     throw new ValidationError("Select a valid publication status.");
   if (collection === "Delegates") {
-    if (!/^\d{4}[A-Z]{4}\d{2}$/.test(String(input.wcaId)))
-      throw new ValidationError("Enter a WCA ID, such as 2010SINQ01.");
     if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(input.email)))
       throw new ValidationError("Enter a valid email address.");
   }
@@ -81,16 +70,13 @@ export function validateContent(
 
 export function validateDelegateProfile(
   value: unknown,
-  wcaId: string,
 ): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new ValidationError("Enter a valid record.");
-  if ("wcaId" in value)
+  if (value && typeof value === "object" && "wcaId" in value)
     throw new ValidationError("You cannot change your WCA ID here.");
-  const { wcaId: _wcaId, ...profile } = validateContent(
-    "Delegates",
-    { ...value, wcaId },
-    false,
-  );
+  const profile = validateContent("Delegates", value, false);
+  if (!["published", "hidden", "draft"].includes(String(profile.status)))
+    throw new ValidationError(
+      "Only a full editor can archive or restore a profile.",
+    );
   return profile;
 }

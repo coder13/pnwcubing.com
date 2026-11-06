@@ -10,6 +10,7 @@ import {
   validateContent,
   ValidationError,
 } from "./validation";
+import { linkDelegateAccount } from "./delegateSync";
 import type { Delegate } from "../directus";
 
 export async function mutateContent(
@@ -41,6 +42,10 @@ export async function mutateContent(
       403,
       "This editor account is managed by the site configuration.",
     );
+  if (collection === "Delegates" && request.method === "DELETE")
+    throw new ValidationError(
+      "Archive this delegate to keep the profile and WCA account link.",
+    );
   const path = itemPath(collection, id);
   let body;
   let input: unknown;
@@ -56,7 +61,15 @@ export async function mutateContent(
     const delegate = await cmsRequest<Delegate>(path);
     if (!canEditDelegate(user, delegate))
       throw new AuthError(403, "You can edit only your own delegate profile.");
-    body = validateDelegateProfile(input, delegate.wcaId);
+    body = validateDelegateProfile(input);
+  } else if (collection === "Delegates") {
+    if (!input || typeof input !== "object" || Array.isArray(input))
+      throw new ValidationError("Enter a valid record.");
+    const { wcaUserId, ...profile } = input as Record<string, unknown>;
+    body = validateContent(collection, profile, request.method === "POST");
+    const current = id ? await cmsRequest<Delegate>(path) : undefined;
+    const account = await linkDelegateAccount(wcaUserId, current);
+    body = { ...body, ...account };
   } else if (request.method !== "DELETE") {
     body = validateContent(collection, input, request.method === "POST");
   }
