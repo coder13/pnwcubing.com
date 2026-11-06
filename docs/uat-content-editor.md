@@ -91,3 +91,9 @@ Every page renders on the server at request time. The root, delegate, and compet
 The production preview returned HTTP 200 for all eight public and login routes. Each initial HTML response contained its page content and title, without a loading screen or deferred content. Delegate profiles, competition details, and both FAQ lists appeared without browser JavaScript. Signed-out requests for editor pages redirected to login. All 119 tests, ESLint, TypeScript, and the production build passed. The local development preview remained available on port 3000.
 
 The live site passed the same eight page response checks after deployment. Registration dates now show Pacific time with PST or PDT labels. The formatter test covers both winter and summer dates. All 120 tests, ESLint, TypeScript, and the final production build passed. The unused legacy FAQ component was removed.
+
+Directus accounts can now sign in on the website with email, password, and an optional two-factor code. Active accounts with the Content-Editor role or administrator access receive full website content access. Directus identities stay separate from numeric WCA ownership. No new schema, role changes, or environment variables are required.
+
+All 128 tests, ESLint, TypeScript, and the production build passed. Tests cover WCA compatibility, Directus role removal, expired sessions, private cookies, two-factor failures, cross-site submissions, and sign-out. The login form and editor routes also passed local HTTP checks.
+
+With user approval, a temporary Content-Editor account tested the local website against the live Directus instance. Sign-in opened the editor without a WCA account. Removing its role blocked saves before any content change, and suspending it removed access. Sign-out cleared the cookie and revoked that Directus refresh token. The account was removed after the checks. The current Directus access token lifetime is 15 minutes.

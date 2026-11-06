@@ -4,6 +4,7 @@ import { parseEditorRoute, editorUrl } from "@/lib/editor/routes";
 import { redirect, notFound } from "next/navigation";
 import { EditorWorkspace } from "@/components/editor/EditorWorkspace";
 import { AuthError, currentUser } from "@/lib/editor/auth";
+import { DirectusLoginError } from "@/lib/editor/directusAuth";
 import { bootstrapEditorIds } from "@/lib/editor/config";
 import { listItems } from "@/lib/editor/directus";
 import type { Delegate } from "@/lib/directus";
@@ -30,6 +31,11 @@ export default async function Admin({
     identity = await currentUser();
   } catch (error) {
     if (error instanceof AuthError && error.status === 401) redirect("/login");
+    if (
+      error instanceof DirectusLoginError &&
+      error.reason === "directus-access"
+    )
+      redirect("/login?error=directus-access");
     return <EditorUnavailable />;
   }
   if (!identity) redirect("/login");

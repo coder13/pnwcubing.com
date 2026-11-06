@@ -54,6 +54,8 @@ export interface WcaUser {
   avatar?: { url?: string; thumb_url?: string };
 }
 
+export type EditorUser = WcaUser | import("./directusAuth").DirectusEditorUser;
+
 export const contentCollections = [
   "Delegates",
   "FAQ",

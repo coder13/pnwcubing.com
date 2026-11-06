@@ -233,6 +233,21 @@ export function EditorWorkspace(props: Props) {
                 ? "Create or select a record. Save your changes to update Directus."
                 : "You can edit your profile details and publication status. Your WCA account IDs are read-only. Either you or a full editor can show or hide your profile."}
             </p>
+            {props.isEditor && collection === "SiteEditors" && (
+              <p>
+                This list controls WCA editor access. For editors without a WCA
+                account,{" "}
+                <a
+                  href="https://admin.pnwcubing.com/admin/users"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  manage Directus users
+                </a>{" "}
+                and assign the Content-Editor role.
+              </p>
+            )}
             {props.isEditor && collection === "Delegates" && (
               <div className="space-y-2 rounded border p-4">
                 <button

@@ -10,7 +10,7 @@ import { cmsRequest, encodeFaqWrite, itemPath, listItems } from "./directus";
 import { decodeFaqItem } from "./faqFields";
 import defaults from "@/content/default-content.json";
 import { canEditDelegate } from "./permissions";
-import { contentCollections, ContentCollection, WcaUser } from "./types";
+import { contentCollections, ContentCollection, EditorUser } from "./types";
 import {
   validateDelegateProfile,
   validateContent,
@@ -23,7 +23,7 @@ export async function mutateContent(
   request: Request,
   collectionName: string,
   ids: string[] | undefined,
-  { user, isEditor }: { user: WcaUser; isEditor: boolean },
+  { user, isEditor }: { user: EditorUser; isEditor: boolean },
 ) {
   if (
     !contentCollections.includes(collectionName as ContentCollection) ||

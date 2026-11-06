@@ -1,15 +1,16 @@
 # Website content editor
 
-The private editor is at `/login` or `/admin`. The public menu has no login link. These routes ask search engines not to index them. Every save requires a valid WCA session and a server permission check.
+The private editor is at `/login` or `/admin`. These routes ask search engines not to index them. Every save requires a valid WCA or Directus session and a server permission check.
 
 ## Access
 
-| Account                                                       | Access                 |
-| ------------------------------------------------------------- | ---------------------- |
-| WCA account with a matching, unarchived `Delegates.wcaUserId` | Edit their own profile |
-| Active user in `SiteEditors`                                  | Full content access    |
-| User listed in `CONTENT_EDITOR_WCA_IDS`                       | Full content access    |
-| Other account                                                 | No editor access       |
+| Account                                                            | Access                 |
+| ------------------------------------------------------------------ | ---------------------- |
+| WCA account with a matching, unarchived `Delegates.wcaUserId`      | Edit their own profile |
+| Active user in `SiteEditors`                                       | Full content access    |
+| User listed in `CONTENT_EDITOR_WCA_IDS`                            | Full content access    |
+| Active Directus user with `Content-Editor` or administrator access | Full content access    |
+| Other account                                                      | No editor access       |
 
 A WCA user ID is a number, such as `8184`. A WCA competitor ID is a different value, such as `2010TEST01`. The editor list uses numeric user IDs. Delegate ownership uses the numeric user ID from the authenticated WCA account. A competitor ID is optional. Names and email addresses do not determine ownership.
 
@@ -36,6 +37,18 @@ The website uses the authorization code flow with state and PKCE. It requests on
 The server reads the current WCA profile for each editor page and save. It also reads editor access on each request. A removal of full editor access takes effect on the next request. An unarchived delegate profile still grants access to that profile, even after a WCA role ends. A delegate can edit their own name, email, region, blurb, publication status, and display order. Both WCA IDs appear as read-only fields after the account is linked. Only full editors can add, archive, or restore profiles. Either the delegate or a full editor can publish or hide an unarchived profile.
 
 If a delegate has one matching profile, the editor selects it automatically. Delegates cannot edit other profiles or other content collections.
+
+## Sign in with a Directus account
+
+The website login page also accepts accounts from `admin.pnwcubing.com`. A WCA account is not required. In the Directus console, open Users and assign the `Content-Editor` role to each approved editor. Existing Directus administrators also have full website content access. Other Directus roles do not grant website editor access.
+
+On the website, open `/login` and enter the Directus email and password. If the account uses two-factor authentication, enter its current six-digit code. Credentials go from the website server to Directus. The website does not store the password. Tokens stay in an encrypted, HttpOnly cookie and never appear in local storage.
+
+Directus sign-in follows the access token lifetime configured in Directus, within eight hours at most. The current instance uses 15 minutes. When the token expires, sign in again. The website reads the current Directus account status and role before every editor page and save. Removing editor access or suspending the account blocks the next request.
+
+Website sign-out clears the cookie and requests revocation of that login's Directus refresh token. It does not sign out other Directus sessions. The website does not renew a Directus session automatically. If the session expires during editing, the save returns a sign-in error and keeps the unsaved form in the browser.
+
+No additional website environment variables or schema changes are required. WCA access remains in `SiteEditors` and `CONTENT_EDITOR_WCA_IDS`. Directus access remains in Directus Users and Roles. The Editor access page links to Directus user management.
 
 ## Prepare Directus
 

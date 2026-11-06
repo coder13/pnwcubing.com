@@ -24,7 +24,7 @@ export async function GET() {
       { headers },
     );
   } catch (error) {
-    if (error instanceof AuthError && error.status === 401)
+    if (error instanceof AuthError && [401, 403].includes(error.status))
       return NextResponse.json({ user: null }, { headers });
     return NextResponse.json(
       { error: "Session could not be checked." },

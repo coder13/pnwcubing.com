@@ -188,11 +188,13 @@ test("unauthenticated writes fail before Directus and foreign-origin writes fail
 });
 
 test("logout requires the site origin and clears the session", async () => {
-  const response = await logout(
-    new Request("https://www.pnwcubing.com/api/auth/logout", {
-      method: "POST",
-      headers: { origin: "https://www.pnwcubing.com" },
-    }),
+  const response = await context("", () =>
+    logout(
+      new Request("https://www.pnwcubing.com/api/auth/logout", {
+        method: "POST",
+        headers: { origin: "https://www.pnwcubing.com" },
+      }),
+    ),
   );
   assert.equal(response.status, 303);
   assert.equal(response.cookies.get("pnw_session")!.maxAge, 0);

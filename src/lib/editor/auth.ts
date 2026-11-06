@@ -3,13 +3,18 @@ import { bootstrapEditorIds, siteOrigin } from "./config";
 import { unseal } from "./crypto";
 import { listItems } from "./directus";
 import type { SiteEditor, WcaUser } from "./types";
+import { AuthError } from "./authError";
+import { fetchDirectusUser, type DirectusSession } from "./directusAuth";
+export { AuthError } from "./authError";
 
 export const sessionCookie = "pnw_session";
 export const oauthCookie = "pnw_oauth";
-export interface Session {
+export interface WcaSession {
+  provider?: "wca";
   accessToken: string;
   expiresAt: number;
 }
+export type Session = WcaSession | DirectusSession;
 export interface OAuthState {
   state: string;
   verifier: string;
@@ -23,15 +28,6 @@ export function cookieOptions() {
     sameSite: "lax" as const,
     path: "/",
   };
-}
-
-export class AuthError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-  }
 }
 
 export async function fetchWcaUser(accessToken: string): Promise<WcaUser> {
@@ -73,13 +69,18 @@ export async function currentUser() {
     "session",
   );
   if (!session) return null;
+  if (session.provider === "directus")
+    return {
+      user: await fetchDirectusUser(session.accessToken),
+      isEditor: true,
+    };
   const user = await fetchWcaUser(session.accessToken);
   return { user, isEditor: await isContentEditor(user.id) };
 }
 
 export async function requireUser() {
   const identity = await currentUser();
-  if (!identity) throw new AuthError(401, "Sign in with WCA to edit content.");
+  if (!identity) throw new AuthError(401, "Sign in to edit content.");
   return identity;
 }
 
