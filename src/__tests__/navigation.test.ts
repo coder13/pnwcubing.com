@@ -181,18 +181,22 @@ test("avatar URLs accept only the WCA avatar host", () => {
     assert.equal(safeAvatar(url), null);
 });
 
-test("the normal header has centered website links and no logo", async () => {
+test("the shared header restores the home logo and accessible dropdown styling", async () => {
   const React = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
   const { Header } = await import("../components/Layout/Header/Header");
   const html = renderToStaticMarkup(
     React.createElement(Header, { navigation: publicNavigation([]) }),
   );
-  assert.ok(html.includes("justify-center"));
-  assert.ok(!html.includes("/full.svg"));
-  assert.ok(!html.includes("<img"));
+  assert.ok(html.includes('aria-label="Main navigation"'));
+  assert.ok(html.includes('aria-label="PNW Cubing home"'));
+  assert.ok(html.includes('href="/"'));
+  assert.ok(html.includes("/full.svg"));
+  assert.ok(html.includes('alt="Pacific Northwest Cubing Logo"'));
+  assert.ok(html.includes('aria-haspopup="menu"'));
+  assert.ok(!html.includes("<summary"));
   assert.ok(html.includes('href="/competitions"'));
-  assert.ok(html.includes('href="/about"'));
+  assert.ok(html.includes("About"));
 });
 
 test("navigation cannot create or delete links or update anything besides the two approved URLs", async () => {

@@ -209,7 +209,7 @@ Setup preserves existing IDs, HTML, and publication states. It copies old headin
 
 Removing a block through the website hides and unlinks its record. Removing a block from the native page list unlinks it. Setup does not restore unlinked blocks. To restore a website-removed block, open SiteContent, clear its deleted flag, select its page, and set its visibility.
 
-In the website editor, open Navigation to change the Merch and Public Documents URLs. These are the only editable destinations. Website page URLs, link labels, order, and header layout stay in code. The header has centered links and no logo.
+In the website editor, open Navigation to change the Merch and Public Documents URLs. These are the only editable destinations. Website page URLs, link labels, order, and header layout stay in code. The header uses the original navigation style. Its logo links to Home, and About uses a chevron menu. The logo and built-in page links stay in code.
 
 In Directus, open SiteNavigation and select Merch or Public Documents. Edit `href`. The other fields are read-only, and the built-in destination fields are read-only. Existing internal records stay in the database for compatibility, but their values cannot change the website routes or header layout.
 
