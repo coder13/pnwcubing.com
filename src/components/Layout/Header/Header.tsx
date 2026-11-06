@@ -6,10 +6,11 @@ import Link from "next/link";
 import { Dropdown, MegaMenu, Navbar } from "flowbite-react";
 import { usePathname } from "next/navigation";
 import type { NavigationItem } from "@/lib/editor/types";
-import { AccountControl } from "./AccountControl";
+import { AccountControl, useHeaderAccount } from "./AccountControl";
 
 export function Header({ navigation }: { navigation: NavigationItem[] }) {
   const pathname = usePathname();
+  const account = useHeaderAccount();
   const roots = navigation.filter(
     (item) => item.parent === 0 && item.kind !== "brand",
   );
@@ -17,16 +18,16 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
     <MegaMenu
       key={pathname}
       aria-label="Main navigation"
-      className="relative z-50 flex min-h-20 shadow-md"
+      className="relative z-50 flex h-20 shrink-0 shadow-md"
       theme={{
         root: {
-          base: "bg-white px-2 py-2.5 sm:px-4",
+          base: "bg-white px-4 py-2.5",
           inner: {
             base: "mx-auto flex w-full flex-wrap items-center justify-between",
           },
         },
         collapse: {
-          base: "w-full lg:block lg:w-auto",
+          base: "absolute left-0 right-0 top-full z-50 max-h-[calc(100dvh-5rem)] w-full overflow-y-auto border-t border-gray-100 bg-white px-4 pb-4 shadow-lg lg:static lg:max-h-none lg:w-auto lg:overflow-visible lg:border-0 lg:p-0 lg:shadow-none lg:block",
           list: "mt-4 flex flex-col gap-1 lg:mt-0 lg:flex-row lg:items-center lg:gap-8 lg:text-sm lg:font-medium",
         },
         link: {
@@ -37,7 +38,7 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
           },
         },
         toggle: {
-          base: "inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 lg:hidden",
+          base: "inline-flex h-10 w-10 items-center justify-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 lg:hidden",
         },
       }}
     >
@@ -46,20 +47,33 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
           href="/"
           as={Link}
           aria-label="PNW Cubing home"
-          className="mr-6 shrink-0"
+          className="shrink-0 p-2 lg:mr-6 lg:p-0"
         >
           <Image
             alt="Pacific Northwest Cubing Logo"
+            src="/header-logo.svg"
+            width={152}
+            height={50}
+            className="h-10 w-auto lg:hidden"
+          />
+          <Image
+            alt="Pacific Northwest Cubing Logo"
             src="/full.svg"
-            className="-m-6 h-28"
+            className="hidden lg:-m-6 lg:block lg:h-28"
             width={200}
             height={100}
           />
         </Navbar.Brand>
-        <div className="ml-auto mr-12 flex items-center gap-3 lg:order-last lg:ml-0 lg:mr-0">
-          <div className="absolute right-4 top-6">
-            <AccountControl />
-          </div>
+        <div className="ml-auto flex items-center gap-3 lg:order-last lg:ml-0">
+          {(account.user || account.showLogin) && (
+            <div
+              className={`${
+                account.user ? "" : "hidden lg:block"
+              } lg:absolute lg:right-4 lg:top-6`}
+            >
+              <AccountControl {...account} />
+            </div>
+          )}
           <Navbar.Toggle aria-label="Toggle navigation" />
         </div>
         <Navbar.Collapse className="lg:mx-auto">
@@ -123,6 +137,16 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
               </Navbar.Link>
             );
           })}
+          {account.showLogin && (
+            <li className="lg:hidden">
+              <Link
+                href="/login"
+                className="block py-2 pl-3 pr-4 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                login
+              </Link>
+            </li>
+          )}
         </Navbar.Collapse>
       </div>
     </MegaMenu>

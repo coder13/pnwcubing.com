@@ -83,3 +83,5 @@ The delegate form no longer shows the WCA region, role, or general visibility ex
 
 
 The shared header restores the original navigation styling and adds the PNW Cubing logo as a Home link. About uses the menu component with a right-side chevron. Browser checks confirmed that it opens, shows both links, and closes with Escape. The avatar stays in the top right when signed in. Only the Merch and Public Documents URLs remain editable.
+
+The mobile header passed a browser check at 390 pixels wide. The logo and hamburger had matching visible margins. The open menu covered the page with a white panel, and all navigation links remained visible. The page stayed in place beneath the menu. All 119 tests, ESLint, TypeScript, and the production build passed.

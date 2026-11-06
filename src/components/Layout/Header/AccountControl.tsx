@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { loginHistory, safeAvatar } from "@/lib/editor/account";
 
 type Account = { name: string; avatar: string | null };
-export function AccountControl() {
+export function useHeaderAccount() {
   const pathname = usePathname();
   const [user, setUser] = useState<Account | null>(null);
   const [showLogin, setShowLogin] = useState(false);
@@ -55,6 +55,13 @@ export function AccountControl() {
       window.clearInterval(timer);
     };
   }, [pathname]);
+  return { user, showLogin };
+}
+
+export function AccountControl({
+  user,
+  showLogin,
+}: ReturnType<typeof useHeaderAccount>) {
   if (user)
     return (
       <Link

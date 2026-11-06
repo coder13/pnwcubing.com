@@ -220,3 +220,5 @@ A signed-in visitor sees their WCA avatar in the top right. If WCA has no avatar
 For Parents and Competition Guide each contain their own FAQ list block. Questions, rich answers, visibility, and order are editable inside each page. The website uses its FAQ components and theme to display the items.
 
 The local preview runs with `yarn dev` at `http://localhost:3000`. Development uses `.next-dev`, while production builds use `.next`. A production build can run without stopping the local preview.
+
+On mobile, the logo and hamburger use matching outer margins. The hamburger opens a white panel over the page. Long menus scroll within the available screen height. Returning visitors see the signed-out `login` link inside this panel. Signed-in visitors keep their avatar beside the hamburger.
