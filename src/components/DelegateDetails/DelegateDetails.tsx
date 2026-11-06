@@ -1,4 +1,5 @@
 import React from "react";
+import { safeHtml } from "@/lib/editor/html";
 import { Delegate } from "@/lib/directus";
 import { getPerson } from "@/lib/wcaApi";
 import { getWcaAccount } from "@/lib/wcaDelegates";
@@ -52,7 +53,10 @@ export async function DelegateDetails({
           <span className="text-2xl">{name}</span>
           {wcaId ? ` (${wcaId})` : ""}
         </p>
-        <p className="py-2 whitespace-pre-wrap">{description}</p>
+        <div
+          className="rich-text py-2 whitespace-pre-wrap"
+          dangerouslySetInnerHTML={{ __html: safeHtml(description) }}
+        />
       </div>
     </div>
   );

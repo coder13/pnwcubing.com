@@ -1,5 +1,17 @@
 import { loadEnvConfig } from "@next/env";
 import defaults from "../src/content/default-content.json";
+import { parseDocument, DomUtils } from "htmlparser2";
+import {
+  defaultPageBlocks,
+  pageIds,
+  contactBodyId,
+} from "../src/lib/editor/blocks";
+import {
+  splitParentFaq,
+  splitPageHeading,
+  splitHomeCards,
+} from "../src/lib/editor/blockMigration";
+import navigation from "../src/content/default-navigation.json";
 import faq from "../src/content/default-faq.json";
 import {
   encodeFaqItem,
@@ -177,8 +189,208 @@ const definitions = [
   },
   {
     collection: "SiteContent",
-    fields: [primary(false, "string"), text("body", "text"), publication],
-    note: "Website sections. Keep the existing IDs.",
+    fields: [
+      primary(false, "string"),
+      text("label"),
+      text("page"),
+      {
+        ...text("body", "text"),
+        meta: {
+          interface: "input-rich-text-html",
+          options: {
+            toolbar: [
+              "bold",
+              "italic",
+              "underline",
+              "h1",
+              "h2",
+              "h3",
+              "bullist",
+              "numlist",
+              "link",
+              "image",
+              "removeformat",
+            ],
+          },
+          note: "Visual page content. Formatting follows the website theme.",
+        },
+      },
+      publication,
+      sort,
+      {
+        ...text("blockType"),
+        schema: { is_nullable: true },
+        meta: {
+          interface: "select-dropdown",
+          required: true,
+          options: {
+            choices: [
+              { text: "Normal text", value: "text" },
+              { text: "Green highlight", value: "highlight" },
+              { text: "FAQ list", value: "faq" },
+              { text: "Home feed cards", value: "cards" },
+              { text: "Page title", value: "pageTitle" },
+            ],
+          },
+        },
+      },
+      {
+        ...text("title"),
+        meta: {
+          interface: "input",
+          conditions: [
+            {
+              name: "Text block",
+              rule: { blockType: { _nin: ["faq", "pageTitle"] } },
+              hidden: true,
+            },
+          ],
+        },
+      },
+      {
+        ...text("subtitle"),
+        meta: {
+          interface: "input",
+          note: "Optional plain-text subtitle.",
+          conditions: [
+            {
+              name: "Other blocks",
+              rule: { blockType: { _neq: "pageTitle" } },
+              hidden: true,
+            },
+          ],
+        },
+      },
+      {
+        field: "cardItems",
+        type: "json",
+        schema: { is_nullable: true },
+        meta: {
+          interface: "list",
+          special: ["cast-json"],
+          conditions: [
+            {
+              name: "Other blocks",
+              rule: { blockType: { _neq: "cards" } },
+              hidden: true,
+            },
+          ],
+          options: {
+            template: "{{title}}",
+            addLabel: "Add card",
+            fields: [
+              {
+                field: "id",
+                name: "Item ID",
+                type: "string",
+                meta: { interface: "input", hidden: true },
+              },
+              {
+                field: "title",
+                name: "Card title",
+                type: "string",
+                meta: { interface: "input", required: true },
+              },
+              {
+                field: "body",
+                name: "Description",
+                type: "text",
+                meta: { interface: "input-rich-text-html" },
+              },
+              {
+                field: "href",
+                name: "Destination URL",
+                type: "string",
+                meta: { interface: "input", required: true },
+              },
+              {
+                field: "linkText",
+                name: "Link text",
+                type: "string",
+                meta: { interface: "input", required: true },
+              },
+              {
+                field: "status",
+                name: "Visibility",
+                type: "string",
+                schema: { default_value: "published" },
+                meta: {
+                  interface: "select-dropdown",
+                  options: {
+                    choices: [
+                      { text: "Published", value: "published" },
+                      { text: "Hidden", value: "hidden" },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        field: "faqItems",
+        type: "json",
+        schema: { is_nullable: true },
+        meta: {
+          interface: "list",
+          special: ["cast-json"],
+          conditions: [
+            {
+              name: "Text block",
+              rule: { blockType: { _neq: "faq" } },
+              hidden: true,
+            },
+          ],
+          options: {
+            template: "{{question}}",
+            addLabel: "Add question",
+            fields: [
+              {
+                field: "id",
+                name: "Item ID",
+                type: "string",
+                meta: { interface: "input", hidden: true },
+              },
+              {
+                field: "question",
+                name: "Question",
+                type: "string",
+                meta: { interface: "input", required: true },
+              },
+              {
+                field: "answer",
+                name: "Answer",
+                type: "text",
+                meta: { interface: "input-rich-text-html" },
+              },
+              {
+                field: "status",
+                name: "Visibility",
+                type: "string",
+                schema: { default_value: "published" },
+                meta: {
+                  interface: "select-dropdown",
+                  options: {
+                    choices: [
+                      { text: "Published", value: "published" },
+                      { text: "Hidden", value: "hidden" },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        field: "deleted",
+        type: "boolean",
+        schema: { default_value: false },
+        meta: { interface: "boolean", special: ["cast-boolean"], hidden: true },
+      },
+    ],
+    note: "Ordered page blocks. Edit through Pages or here. Existing IDs stay unchanged.",
   },
   {
     collection: "SiteEditors",
@@ -193,6 +405,65 @@ const definitions = [
       },
     ],
     note: "Full website editors. The ID is a numeric WCA user ID.",
+  },
+  {
+    collection: "SiteNavigation",
+    fields: [
+      primary(true),
+      text("label"),
+      { ...text("href"), type: "text" },
+      {
+        ...text("kind"),
+        schema: { default_value: "link" },
+        meta: {
+          interface: "select-dropdown",
+          options: {
+            choices: ["link", "menu", "brand"].map((value) => ({
+              text: value,
+              value,
+            })),
+          },
+        },
+      },
+      {
+        ...text("parent", "integer"),
+        schema: { default_value: 0 },
+        meta: {
+          interface: "input",
+          note: "Use 0 for a top-level item, or the numeric ID of a menu.",
+        },
+      },
+      {
+        field: "newTab",
+        type: "boolean",
+        schema: { default_value: false },
+        meta: { interface: "boolean", special: ["cast-boolean"] },
+      },
+      publication,
+      sort,
+    ],
+    note: "Only the Merch and Public Documents destination URLs are used. Website routes and header layout stay in code.",
+  },
+  {
+    collection: "Pages",
+    fields: [
+      primary(false, "string"),
+      text("title"),
+      {
+        field: "blocks",
+        type: "alias",
+        meta: {
+          interface: "list-o2m",
+          special: ["o2m"],
+          options: {
+            template: "{{blockType}}: {{title}}",
+            enableCreate: true,
+            enableSelect: false,
+          },
+        },
+      },
+    ],
+    note: "Open a page to edit, add, or reorder its blocks. Website URLs stay in code.",
   },
 ];
 
@@ -266,6 +537,28 @@ async function ensureCollection(
         await api(`/fields/${collection}`, "POST", field);
         console.log(`Added ${collection}.${field.field}.`);
       } else if (
+        collection === "SiteContent" &&
+        field.field === "id" &&
+        existing.meta?.readonly !== true
+      ) {
+        await api(`/fields/${collection}/${field.field}`, "PATCH", {
+          meta: field.meta,
+        });
+      } else if (collection === "SiteNavigation") {
+        if (
+          existing.meta?.readonly !== field.meta?.readonly ||
+          JSON.stringify(existing.meta?.conditions || []) !==
+            JSON.stringify(field.meta?.conditions || []) ||
+          (field.type === "boolean" &&
+            !(
+              Array.isArray(existing.meta?.special) &&
+              existing.meta.special.includes("cast-boolean")
+            ))
+        )
+          await api(`/fields/${collection}/${field.field}`, "PATCH", {
+            meta: field.meta,
+          });
+      } else if (
         collection === "Delegates" &&
         field.field === "wcaUserId" &&
         existing.schema?.is_unique !== true
@@ -291,6 +584,25 @@ async function ensureCollection(
             type: existing.type,
             schema: { default_value: "hidden" },
           });
+      } else if (
+        collection === "SiteContent" &&
+        [
+          "body",
+          "page",
+          "blockType",
+          "title",
+          "subtitle",
+          "cardItems",
+        ].includes(field.field) &&
+        (existing.meta?.interface !== field.meta?.interface ||
+          JSON.stringify(existing.meta?.conditions || []) !==
+            JSON.stringify(field.meta?.conditions || []) ||
+          JSON.stringify(existing.meta?.options || {}) !==
+            JSON.stringify(field.meta?.options || {}))
+      ) {
+        await api(`/fields/${collection}/${field.field}`, "PATCH", {
+          meta: field.meta,
+        });
       } else if (field.type === "boolean") {
         const special = Array.isArray(existing.meta?.special)
           ? existing.meta.special
@@ -346,6 +658,46 @@ export async function setupCms({ checkOnly = false } = {}) {
     ...definition,
     fields: definition.fields.map((field) => ({
       ...field,
+      ...(definition.collection === "SiteContent" && field.field === "id"
+        ? { meta: { ...field.meta, readonly: true, special: [] } }
+        : {}),
+      ...(definition.collection === "SiteContent" && field.field === "body"
+        ? {
+            meta: {
+              ...field.meta,
+              conditions: [
+                {
+                  name: "FAQ list",
+                  rule: { blockType: { _in: ["faq", "cards", "pageTitle"] } },
+                  hidden: true,
+                },
+              ],
+            },
+          }
+        : {}),
+      ...(definition.collection === "SiteContent" && field.field === "page"
+        ? { meta: { interface: "select-dropdown-m2o", special: ["m2o"] } }
+        : {}),
+      ...(definition.collection === "SiteNavigation"
+        ? {
+            meta: {
+              ...field.meta,
+              readonly: field.field !== "href",
+              ...(field.field === "href"
+                ? {
+                    note: "Only Merch and Public Documents URLs are editable. Website page routes stay fixed.",
+                    conditions: [
+                      {
+                        name: "Fixed website link",
+                        rule: { id: { _nin: [5, 8] } },
+                        readonly: true,
+                      },
+                    ],
+                  }
+                : {}),
+            },
+          }
+        : {}),
       field:
         definition.collection === "FAQ" &&
         (field.field === "question" || field.field === "answer")
@@ -375,6 +727,33 @@ export async function setupCms({ checkOnly = false } = {}) {
         ", ",
       )}. Existing content will stay unchanged.`,
     );
+  const blockSources = collections.has("SiteContent")
+    ? await api<Record<string, unknown>[]>("/items/SiteContent?limit=-1")
+    : [];
+  const structuredSources = new Map(
+    blockSources.flatMap((source) => {
+      const id = String(source.id);
+      if (!source.page || source.deleted) return [];
+      if (id === "home.cards" && source.blockType !== "cards")
+        return [
+          [id, { cardItems: splitHomeCards(String(source.body || "")) }],
+        ] as [string, Record<string, unknown>][];
+      if (
+        (id === "home.title" || pageIds.some((page) => id === `${page}.1`)) &&
+        source.blockType !== "pageTitle"
+      )
+        return [[id, splitPageHeading(String(source.body || ""))]] as [
+          string,
+          Record<string, unknown>,
+        ][];
+      return [];
+    }),
+  );
+  const legacyParent = blockSources.find((item) => item.id === "parents.3");
+  const parentQuestions =
+    legacyParent && !legacyParent.blockType
+      ? splitParentFaq(String(legacyParent.body || ""))
+      : [];
   if (checkOnly) {
     console.log(
       `${identityPlan.updates.length} delegate records need WCA account details.`,
@@ -390,7 +769,13 @@ export async function setupCms({ checkOnly = false } = {}) {
 
   // Prevent anonymous reads and writes before new draft fields or collections exist.
   const permissions = await api<
-    { id: number; collection: string; role?: string | null; policy?: string }[]
+    {
+      id: number;
+      collection: string;
+      role?: string | null;
+      policy?: string;
+      action: string;
+    }[]
   >("/permissions?limit=-1");
   const permissionFields = await api<Field[]>("/fields/directus_permissions");
   const usesPolicies = permissionFields.some(
@@ -409,7 +794,7 @@ export async function setupCms({ checkOnly = false } = {}) {
         ).map((access) => access.policy),
       )
     : new Set<string>();
-  const cmsCollections = ["Delegates", "FAQ", "SiteContent", "SiteEditors"];
+  const cmsCollections = definitions.map((definition) => definition.collection);
   const publicRules = permissions.filter((permission) =>
     usesPolicies
       ? publicPolicies.has(permission.policy || "")
@@ -486,9 +871,302 @@ export async function setupCms({ checkOnly = false } = {}) {
       ...fieldMapRecord,
     });
   }
-  for (const { id, body, status } of defaults) {
+  const contentRecords = await api<
+    { id: string; label?: string; page?: string; blockType?: string }[]
+  >("/items/SiteContent?limit=-1");
+  for (const { id, body, status, label, page } of defaults) {
     if (!existingContent.has(id))
-      await api("/items/SiteContent", "POST", { id, body, status });
+      await api("/items/SiteContent", "POST", {
+        id,
+        body,
+        status,
+        label,
+        page,
+      });
+    else {
+      const current = contentRecords.find((item) => item.id === id);
+      const metadata = {
+        ...(!current?.label ? { label } : {}),
+        ...(!current?.page && !current?.blockType ? { page } : {}),
+      };
+      if (Object.keys(metadata).length)
+        await api(
+          `/items/SiteContent/${encodeURIComponent(id)}`,
+          "PATCH",
+          metadata,
+        );
+    }
+  }
+  if (!existingContent.has("__setup_navigation_v1")) {
+    const existingLinks = new Set(
+      (
+        await api<{ id: number }[]>("/items/SiteNavigation?limit=-1&fields=id")
+      ).map((item) => item.id),
+    );
+    for (const item of navigation)
+      if (!existingLinks.has(item.id))
+        await api("/items/SiteNavigation", "POST", item);
+    await api("/items/SiteContent", "POST", {
+      id: "__setup_navigation_v1",
+      body: "",
+      status: "hidden",
+      label: "Navigation setup marker",
+      page: "internal",
+    });
+  }
+  if (!usesPolicies) {
+    const roles = await api<
+      { id: string; name: string; admin_access: boolean; app_access: boolean }[]
+    >("/roles?limit=-1&fields=id,name,admin_access,app_access");
+    const role = roles.find(
+      (item) =>
+        item.name === "PNW Website Service" &&
+        !item.admin_access &&
+        !item.app_access,
+    );
+    if (role) {
+      const rules = permissions.filter(
+        (item) => item.role === role.id && item.collection === "SiteNavigation",
+      );
+      for (const rule of rules.filter(
+        (item) => !["read", "update"].includes(item.action),
+      ))
+        await api(`/permissions/${rule.id}`, "DELETE");
+      for (const action of ["read", "update"]) {
+        const body = {
+          role: role.id,
+          collection: "SiteNavigation",
+          action,
+          permissions: { id: { _in: [5, 8] } },
+          validation: {},
+          presets: {},
+          fields: action === "read" ? ["id", "href"] : ["href"],
+        };
+        const existingRule = rules.find((item) => item.action === action);
+        await api(
+          existingRule ? `/permissions/${existingRule.id}` : "/permissions",
+          existingRule ? "PATCH" : "POST",
+          body,
+        );
+      }
+    }
+  }
+  const pages = new Set(
+    (await api<{ id: string }[]>("/items/Pages?limit=-1&fields=id")).map(
+      (item) => item.id,
+    ),
+  );
+  for (const id of [...pageIds, "internal"])
+    if (!pages.has(id))
+      await api("/items/Pages?fields=id,title", "POST", {
+        id,
+        title:
+          id === "parents"
+            ? "For Parents"
+            : id === "about"
+            ? "About Us"
+            : id === "internal"
+            ? "Internal settings"
+            : id.charAt(0).toUpperCase() + id.slice(1),
+      });
+  const currentBlocks = await api<Record<string, unknown>[]>(
+    "/items/SiteContent?limit=-1",
+  );
+  const legacyQuestions = collections.has("FAQ")
+    ? await api<Record<string, unknown>[]>("/items/FAQ?limit=-1&sort=sort,id")
+    : [];
+  for (const source of currentBlocks) {
+    const legacyHeading =
+      source.id === "home.title" ||
+      pageIds.some((page) => source.id === `${page}.1`);
+    const needsHeading = legacyHeading && source.blockType !== "pageTitle";
+    const needsCards =
+      source.id === "home.cards" && source.blockType !== "cards";
+    if (source.blockType && !needsHeading && !needsCards) continue;
+    // A native unlink must stay unlinked on later setup runs.
+    if (source.blockType && (!source.page || source.deleted)) continue;
+    const page = String(
+      source.page || defaults.find((item) => item.id === source.id)?.page || "",
+    );
+    if (!pageIds.includes(page)) continue;
+    const original = defaultPageBlocks(page).find(
+      (item) => item.id === source.id,
+    );
+    if (!original) continue;
+    const update: Record<string, unknown> = {
+      page,
+      blockType: original.blockType,
+      sort: original.sort,
+      title: original.title,
+      faqItems: [],
+      subtitle: "",
+      cardItems: [],
+    };
+    if (legacyHeading) {
+      const heading =
+        structuredSources.get(String(source.id)) ||
+        splitPageHeading(String(source.body || ""));
+      update.title = heading.title;
+      update.subtitle = heading.subtitle;
+      // The Contact record contains both its heading and body. Copy body into a new block and keep the original HTML.
+      if (
+        source.id === "contact.1" &&
+        heading.remainder &&
+        !currentBlocks.some((item) => item.id === contactBodyId)
+      ) {
+        await api("/items/SiteContent", "POST", {
+          id: contactBodyId,
+          page,
+          blockType: "text",
+          title: "",
+          subtitle: "",
+          body: heading.remainder,
+          status: source.status,
+          sort: Number(source.sort || 0) + 1,
+          faqItems: [],
+          cardItems: [],
+        });
+      }
+    }
+    if (needsCards || source.id === "home.cards")
+      update.cardItems = (
+        structuredSources.get("home.cards") || {
+          cardItems: splitHomeCards(String(source.body || "")),
+        }
+      ).cardItems;
+    if (source.id === "parents.3") {
+      update.faqItems = legacyParent ? parentQuestions : original.faqItems;
+      const heading = DomUtils.findOne(
+        (node) => node.type === "tag" && /^h[1-6]$/.test(node.name),
+        parseDocument(String(source.body || "")).children,
+        true,
+      );
+      update.title = heading ? DomUtils.textContent(heading) : "";
+    } else if (source.id === "competing.7")
+      update.faqItems = legacyQuestions.length
+        ? legacyQuestions.map((item, index) => ({
+            id: `competition-faq-${item.id}`,
+            question: String(item[faqFields.question] || ""),
+            answer: String(item[faqFields.answer] || ""),
+            status:
+              item.status === "hidden" || item.status === "draft"
+                ? "hidden"
+                : "published",
+          }))
+        : original.faqItems;
+    await api(
+      `/items/SiteContent/${encodeURIComponent(String(source.id))}`,
+      "PATCH",
+      update,
+    );
+  }
+  const relations =
+    await api<{ collection: string; field: string }[]>("/relations");
+  if (
+    !relations.some(
+      (item) => item.collection === "SiteContent" && item.field === "page",
+    )
+  )
+    await api("/relations", "POST", {
+      collection: "SiteContent",
+      field: "page",
+      related_collection: "Pages",
+      schema: { on_delete: "RESTRICT" },
+      meta: {
+        one_field: "blocks",
+        sort_field: "sort",
+        one_deselect_action: "nullify",
+      },
+    });
+  const flowName = "Assign page block IDs";
+  const flows = await api<{ id: string; name: string }[]>("/flows?limit=-1");
+  let idFlow = flows.find((flow) => flow.name === flowName);
+  if (!idFlow)
+    idFlow = await api<{ id: string; name: string }>("/flows", "POST", {
+      name: flowName,
+      status: "inactive",
+      trigger: "event",
+      accountability: "all",
+      options: {
+        type: "filter",
+        scope: ["items.create"],
+        collections: ["SiteContent"],
+        return: "assign_block_id",
+      },
+    });
+  const operations = await api<{ id: string; key: string }[]>(
+    `/operations?limit=-1&filter=${encodeURIComponent(
+      JSON.stringify({ flow: { _eq: idFlow.id } }),
+    )}`,
+  );
+  let idOperation = operations.find(
+    (operation) => operation.key === "assign_block_id",
+  );
+  const operationConfig = {
+    name: "Assign block ID",
+    key: "assign_block_id",
+    type: "exec",
+    flow: idFlow.id,
+    position_x: 20,
+    position_y: 20,
+    options: {
+      code: "module.exports = function(data) { var value = data.$trigger.payload; if (!value.id) { var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.floor(Math.random()*16); return (c === 'x' ? r : (r & 3 | 8)).toString(16); }); value.id = String(value.page || 'page') + '.block.' + uuid; } return value; }",
+    },
+  };
+  if (!idOperation)
+    idOperation = await api<{ id: string; key: string }>(
+      "/operations",
+      "POST",
+      operationConfig,
+    );
+  await api(`/flows/${idFlow.id}`, "PATCH", {
+    status: "active",
+    operation: idOperation.id,
+    options: {
+      type: "filter",
+      scope: ["items.create"],
+      collections: ["SiteContent"],
+      return: "assign_block_id",
+    },
+  });
+  await api("/collections/SiteContent", "PATCH", {
+    meta: {
+      sort_field: "sort",
+      display_template: "{{page}}: {{blockType}} {{title}}",
+    },
+  });
+  await api("/collections/Pages", "PATCH", {
+    meta: { display_template: "{{title}}" },
+  });
+  if (!usesPolicies) {
+    const roles = await api<
+      { id: string; name: string; admin_access: boolean; app_access: boolean }[]
+    >("/roles?limit=-1&fields=id,name,admin_access,app_access");
+    const role = roles.find(
+      (item) =>
+        item.name === "PNW Website Service" &&
+        !item.admin_access &&
+        !item.app_access,
+    );
+    if (role)
+      for (const action of ["create"]) {
+        if (
+          !permissions.some(
+            (item) =>
+              item.role === role.id &&
+              item.collection === "SiteContent" &&
+              item.action === action,
+          )
+        )
+          await api("/permissions", "POST", {
+            role: role.id,
+            collection: "SiteContent",
+            action,
+            permissions: {},
+            validation: { page: { _in: pageIds } },
+            fields: ["*"],
+          });
+      }
   }
   const existingFaq = new Set(
     (await api<{ id: number }[]>("/items/FAQ?limit=-1&fields=id")).map(

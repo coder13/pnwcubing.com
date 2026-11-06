@@ -1,4 +1,5 @@
 import type { ContentCollection } from "./types";
+import { safeNavigationUrl } from "./navigationSettings";
 import { statuses } from "./types";
 
 export class ValidationError extends Error {}
@@ -16,6 +17,15 @@ export function validateContent(
     FAQ: ["question", "answer", "status", "sort"],
     SiteContent: ["body", "status"],
     SiteEditors: ["name", "active"],
+    SiteNavigation: [
+      "label",
+      "href",
+      "kind",
+      "parent",
+      "newTab",
+      "status",
+      "sort",
+    ],
   };
   const allowed = [
     ...fields[collection],
@@ -29,10 +39,10 @@ export function validateContent(
     if (!(field in input)) throw new ValidationError(`Enter ${field}.`);
   }
   for (const [field, value] of Object.entries(input)) {
-    if (field === "active") {
+    if (field === "active" || field === "newTab") {
       if (typeof value !== "boolean")
         throw new ValidationError("Active must be true or false.");
-    } else if (field === "sort" || field === "id") {
+    } else if (field === "sort" || field === "id" || field === "parent") {
       if (
         typeof value !== "number" ||
         !Number.isSafeInteger(value) ||
@@ -45,12 +55,14 @@ export function validateContent(
         value.length >
           (field === "body"
             ? 100000
+            : field === "href"
+            ? 2048
             : field === "description" || field === "answer"
             ? 10000
             : 300)
       )
         throw new ValidationError(`Enter a valid ${field}.`);
-      if (["name", "question"].includes(field) && !value.trim())
+      if (["name", "question", "label"].includes(field) && !value.trim())
         throw new ValidationError(`Enter ${field}.`);
     }
   }
@@ -64,6 +76,16 @@ export function validateContent(
   if (collection === "Delegates") {
     if (input.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(input.email)))
       throw new ValidationError("Enter a valid email address.");
+  }
+  if (collection === "SiteNavigation") {
+    if (!["link", "menu", "brand"].includes(String(input.kind)))
+      throw new ValidationError("Select a valid link type.");
+    if (input.kind !== "menu" && !safeNavigationUrl(input.href))
+      throw new ValidationError(
+        "Enter a local path or an http or https URL without spaces.",
+      );
+    if (input.kind !== "link" && input.parent !== 0)
+      throw new ValidationError("Menus and the logo must be at the top level.");
   }
   return input;
 }

@@ -1,150 +1,102 @@
 "use client";
 
-import Image from "next/image";
-import { MegaMenu, Navbar } from "flowbite-react";
-import { usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import classNames from "classnames";
+import { usePathname } from "next/navigation";
+import type { NavigationItem } from "@/lib/editor/types";
+import { AccountControl } from "./AccountControl";
 
-type NavItem = {
-  href?: string;
-  title: string;
-  openInNewTab?: boolean;
-  items?: NavItem[];
-};
-
-const navItems: NavItem[] = [
-  {
-    href: "/competitions",
-    title: "Competitions",
-  },
-  {
-    href: "/delegates",
-    title: "Delegates",
-  },
-  {
-    href: "/for-parents",
-    title: "For Parents",
-  },
-  {
-    href: "https://speedcubeshop.com/collections/pacific-northwest-cubing-collection",
-    title: "Merch",
-    openInNewTab: true,
-  },
-  {
-    title: "About",
-    items: [
-      {
-        href: "/about",
-        title: "About Us",
-      },
-      {
-        href: "https://drive.google.com/drive/folders/1_8lCU2c5EOrkil0AOhS0EmhOLucsR5Ou?usp=drive_link",
-        title: "Public Documents",
-        openInNewTab: true,
-      },
-    ],
-  },
-  {
-    href: "/contact",
-    title: "Contact",
-  },
-];
-
-export function Header() {
-  const [isOpen, setIsOpen] = useState(false);
+export function Header({ navigation }: { navigation: NavigationItem[] }) {
   const pathname = usePathname();
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
-
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [pathname]);
+  const roots = navigation.filter(
+    (item) => item.parent === 0 && item.kind !== "brand",
+  );
+  function link(item: NavigationItem) {
+    return (
+      <Link
+        href={item.href}
+        target={item.newTab ? "_blank" : undefined}
+        rel={item.newTab ? "noopener noreferrer" : undefined}
+        aria-current={pathname === item.href ? "page" : undefined}
+        className="block rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 aria-[current=page]:text-primary"
+      >
+        {item.label}
+      </Link>
+    );
+  }
   return (
-    <MegaMenu className="flex shadow-md z-50 xl:[&>div]:max-w-2/3 h-20">
-      <div className="mx-auto flex flex-wrap items-center justify-between w-full">
-        <Navbar.Brand href="/" as={Link}>
-          <Image
-            alt="Pacific Northwest Cubing Logo"
-            src="/full.svg"
-            className="h-28 -m-6"
-            width={200}
-            height={100}
-          />
-        </Navbar.Brand>
-        <Navbar.Toggle onClick={() => setIsOpen((open) => !open)} />
-        <Navbar.Collapse className="visible">
-          {navItems.map((nav) => {
-            if ("items" in nav && nav.items?.length) {
-              return (
-                <Navbar.Link key={nav.title}>
-                  <MegaMenu.Dropdown toggle={<>{nav.title}</>}>
-                    <ul className="grid grid-cols-1">
-                      <div className="space-y-4 p-4">
-                        {nav.items.map((item) => (
-                          <Navbar.Link
-                            key={item.href}
-                            as={Link}
-                            active={pathname === item.href}
-                            href={item.href}
-                            target={item.openInNewTab ? "_blank" : undefined}
-                          >
-                            <p>{item.title}</p>
-                          </Navbar.Link>
-                        ))}
-                      </div>
-                    </ul>
-                  </MegaMenu.Dropdown>
-                </Navbar.Link>
-              );
-            }
-
-            return (
-              <Navbar.Link
-                key={nav.href}
-                as={Link}
-                active={pathname === nav.href}
-                href={nav.href}
-                target={nav.openInNewTab ? "_blank" : undefined}
-              >
-                <p>{nav.title}</p>
-              </Navbar.Link>
-            );
-          })}
-        </Navbar.Collapse>
-        {isOpen && (
-          <div
-            className={classNames(
-              "w-full md:w-auto md:hidden bg-white shadow-lg",
-            )}
+    <header className="relative z-50 flex min-h-[5rem] items-center bg-white px-4 py-2 shadow-md">
+      <div className="mx-auto flex w-full flex-wrap items-center justify-center gap-3">
+        <div className="flex items-center gap-3">
+          <nav
+            key={pathname}
+            aria-label="Main navigation"
+            className="hidden items-center lg:flex"
           >
-            <ul className="flex flex-col md:flex-row md:space-x-8 md:text-sm md:font-medium z-50 bg-white">
-              {navItems
-                .flatMap(
-                  (nav) =>
-                    ("items" in nav && nav.items?.length && nav.items.length > 0
-                      ? nav.items
-                      : nav) as {
-                      href: string;
-                      title: string;
-                      openInNewTab?: boolean;
-                    },
-                )
-                .map((nav) => (
-                  <Navbar.Link
-                    key={nav.href}
-                    as={Link}
-                    active={pathname === nav.href}
-                    href={nav.href}
-                    target={nav.openInNewTab ? "_blank" : undefined}
-                  >
-                    <p>{nav.title}</p>
-                  </Navbar.Link>
-                ))}
-            </ul>
+            {roots.map((item) =>
+              item.kind === "menu" ? (
+                <details key={item.id} className="relative">
+                  <summary className="cursor-pointer rounded px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    {item.label}
+                  </summary>
+                  <ul className="absolute right-0 min-w-[12rem] rounded border bg-white p-2 shadow-lg">
+                    {navigation
+                      .filter((child) => child.parent === item.id)
+                      .map((child) => (
+                        <li key={child.id}>{link(child)}</li>
+                      ))}
+                  </ul>
+                </details>
+              ) : (
+                <React.Fragment key={item.id}>{link(item)}</React.Fragment>
+              ),
+            )}
+          </nav>
+          <div className="absolute right-4 top-6">
+            <AccountControl />
           </div>
+          <button
+            type="button"
+            aria-label="Toggle navigation"
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            onClick={() => setOpen(!open)}
+            className="rounded border px-3 py-2 lg:hidden"
+          >
+            Menu
+          </button>
+        </div>
+        {open && (
+          <nav
+            id="mobile-navigation"
+            aria-label="Mobile navigation"
+            className="w-full border-t bg-white lg:hidden"
+          >
+            <ul>
+              {roots.map((item) =>
+                item.kind === "menu" ? (
+                  <li key={item.id}>
+                    <span className="block px-3 pt-3 text-sm font-semibold">
+                      {item.label}
+                    </span>
+                    <ul className="pl-3">
+                      {navigation
+                        .filter((child) => child.parent === item.id)
+                        .map((child) => (
+                          <li key={child.id}>{link(child)}</li>
+                        ))}
+                    </ul>
+                  </li>
+                ) : (
+                  <li key={item.id}>{link(item)}</li>
+                ),
+              )}
+            </ul>
+          </nav>
         )}
       </div>
-    </MegaMenu>
+    </header>
   );
 }

@@ -22,3 +22,18 @@ html {
     font-size: 16px;
   }
 }
+
+@layer components {
+  .rich-text > * + * { margin-top: 0.75rem; }
+  .rich-text h1 { @apply text-4xl font-bold; }
+  .rich-text h2 { @apply text-2xl font-semibold; }
+  .rich-text h3 { @apply text-xl font-semibold; }
+  .rich-text h4, .rich-text h5, .rich-text h6 { @apply text-lg font-semibold; }
+  .rich-text ul { @apply list-disc pl-6; }
+  .rich-text ol { @apply list-decimal pl-6; }
+  .rich-text a { @apply text-primary underline; }
+  .rich-text blockquote { @apply border-l-4 border-gray-300 pl-4 italic; }
+  .rich-text img { @apply max-w-full; }
+  .rich-text iframe { @apply max-w-full; }
+  .rich-text .ProseMirror-selectednode { @apply outline outline-2 outline-primary; }
+}

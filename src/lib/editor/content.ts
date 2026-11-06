@@ -56,3 +56,22 @@ export async function getPublicFaq(): Promise<FAQItem[]> {
     return defaultFaq as FAQItem[];
   }
 }
+
+export async function getPageBlocks(page: string) {
+  const { blocksForPage, defaultPageBlocks } = await import("./blocks");
+  try {
+    const records = await listItems<SiteContent>("SiteContent", {
+      filter: JSON.stringify({ page: { _eq: page }, deleted: { _neq: true } }),
+      sort: "sort,id",
+    });
+    return blocksForPage(page, records).flatMap((block) =>
+      block.status === "hidden"
+        ? []
+        : block.status === "draft"
+        ? defaultPageBlocks(page).filter((original) => original.id === block.id)
+        : [block],
+    );
+  } catch {
+    return defaultPageBlocks(page);
+  }
+}

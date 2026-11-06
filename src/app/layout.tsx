@@ -1,4 +1,5 @@
 import classnames from "classnames";
+import { getNavigation } from "@/lib/editor/navigation";
 import { Header } from "@/components/Layout";
 import "./globals.css";
 import type { Metadata } from "next";
@@ -15,11 +16,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.pnwcubing.com/"),
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const navigation = await getNavigation();
   return (
     <html lang="en">
       <body
@@ -30,7 +32,7 @@ export default function RootLayout({
       >
         <Analytics />
 
-        <Header />
+        <Header navigation={navigation} />
         <div className="h-full overflow-x-hidden overflow-y-auto">
           {children}
         </div>

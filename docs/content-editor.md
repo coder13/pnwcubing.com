@@ -13,7 +13,7 @@ The private editor is at `/login` or `/admin`. The public menu has no login link
 
 A WCA user ID is a number, such as `8184`. A WCA competitor ID is a different value, such as `2010TEST01`. The editor list uses numeric user IDs. Delegate ownership uses the numeric user ID from the authenticated WCA account. A competitor ID is optional. Names and email addresses do not determine ownership.
 
-Full editors can add, edit, archive, restore, publish, hide, and reorder delegates. They can add, edit, delete, publish, hide, and reorder FAQ questions. They can change delegate regions and contact details. They can edit the home cards, page headings, About, contact information, parent information, competition guidance, and delegate introduction. Competition results and upcoming competitions still come from WCA. Site layout and navigation remain in code.
+Full editors can add, edit, archive, restore, publish, hide, and reorder delegates. They can add, edit, delete, publish, hide, and reorder FAQ questions. They can change delegate regions and contact details. They can edit the home cards, page headings, About, contact information, parent information, competition guidance, and delegate introduction. Competition results and upcoming competitions still come from WCA. Site layout remains in code. Built-in header links stay in code. The Merch and Public Documents URLs come from `SiteNavigation`.
 
 Regions are text fields. Select an existing region or enter a new region. Smaller display order numbers appear first.
 
@@ -62,14 +62,16 @@ If Directus rejects a field change, the error now names the field and includes t
 
 The script keeps existing delegate content and primary keys. It links each legacy competitor ID to a numeric `wcaUserId` through the public WCA account endpoint. It requires unique numeric IDs and stops before changes if identities conflict. If a record has neither ID, the editor must link it manually. Existing publication states stay unchanged. Only records from before the original publication feature receive an initial published state. It creates the following collections:
 
-| Collection    | Purpose                                                      |
-| ------------- | ------------------------------------------------------------ |
-| `Delegates`   | Existing profiles, with publication status and display order |
-| `FAQ`         | Question, answer, publication status, and display order      |
-| `SiteContent` | HTML page sections with stable IDs                           |
-| `SiteEditors` | Numeric WCA user IDs, names, and active flags                |
+| Collection       | Purpose                                                      |
+| ---------------- | ------------------------------------------------------------ |
+| `Delegates`      | Existing profiles, with publication status and display order |
+| `FAQ`            | Original FAQ records retained after the block import         |
+| `SiteContent`    | Ordered page blocks with stable IDs                          |
+| `Pages`          | Page list with native access to each page’s blocks           |
+| `SiteNavigation` | Merch and Public Documents URLs                              |
+| `SiteEditors`    | Numeric WCA user IDs, names, and active flags                |
 
-The script copies the current site text into Directus. It removes anonymous access to these four collections before it adds draft content. The website reads public content through its server token. Setup does not grant editor access to any WCA user.
+The script copies the current site text into Directus. It removes anonymous access to these content collections before it adds draft content. The website reads public content through its server token. Setup does not grant editor access to any WCA user.
 
 To grant the first full editor access, add an active record in `SiteEditors` through Directus. Use the numeric WCA user ID as the record ID. You can also set `CONTENT_EDITOR_WCA_IDS` to a comma-separated list of numeric WCA user IDs.
 
@@ -82,8 +84,8 @@ The setup changes anonymous API access. Configure the website token before you d
 1. In Directus, create a role or policy for the website service.
 2. Disable Data Studio access and administrator access for this role or policy.
 3. Grant read, create, update, and delete access to `Delegates`, `FAQ`, and `SiteEditors`.
-4. Grant read and update access to `SiteContent`.
-5. Include all fields in these collection permissions.
+4. Grant read, create, and update access to `SiteContent`. Include all fields. The website removes blocks without deleting their records.
+5. Grant `SiteNavigation` read access to `id,href` and update access to `href`, limited to IDs 5 and 8.
 6. Create a service user with this role or policy.
 7. Create a static token for this user.
 8. Set `DIRECTUS_TOKEN` to this static token.
@@ -119,7 +121,13 @@ Archived delegates remain private. Only a full editor can restore them. The edit
 
 A save takes effect immediately for a published record. Drafts replace the saved record. They do not retain a separate published revision. For a page section, keep Published selected when you update live copy. To prepare changes separately, use Directus content versions outside this editor.
 
-Page sections have an HTML field and a preview. The website removes scripts, event handlers, unsafe URLs, and forms. Video frames can use only the supported YouTube hosts. Existing Tailwind classes remain available. New classes require a code change and rebuild. FAQ answers and delegate blurbs use plain text.
+Page titles and subtitles use plain text. Page bodies, card descriptions, FAQ answers, and delegate blurbs use visual rich text editors.
+
+The website uses Tiptap. Click an existing link to edit its text and URL. You can also select text and use Link or Ctrl/Cmd+K. Apply link changes the draft. Save page publishes the change.
+
+Remove link keeps its text. Escape or Cancel closes the link editor without changes.
+
+The website removes scripts, event handlers, unsafe URLs, and forms. Video frames can use only the supported YouTube hosts. Layout and colors stay in code.
 
 If Directus is unavailable, page sections and FAQs use the original site text. The delegate directory becomes empty. The editor shows an error and rejects saves. A hidden page section can therefore show its original text during a CMS outage.
 
@@ -142,7 +150,7 @@ For a live acceptance check:
 3. Change the region and blurb, then publish the profile.
 4. Open `/delegates` and find the profile in its region.
 5. Hide the profile and make sure that it disappears.
-6. Add and publish a FAQ question, then inspect `/about/competing`.
+6. Open Pages, then Competition Guide. Add a question to its FAQ list and inspect `/about/competing`.
 7. Edit a page section, save it, and inspect the public page.
 8. Grant another WCA account editor access, then revoke that access.
 9. Sign in as a delegate and edit that delegate's profile. Make sure that the WCA ID is read-only.
@@ -186,3 +194,27 @@ cat /etc/cron.d/pnw-delegate-visibility
 ```
 
 To update the installed job, copy `scripts/update-delegate-visibility.mjs` and `scripts/run-delegate-visibility.sh` into the server directory. Keep `job.env` private with mode `600`. Run the dry check before the next scheduled run. To disable the job, move its schedule file out of `/etc/cron.d`.
+
+## Pages, header links, and account display
+
+Full editors start at `/admin/pages`. Open a page to edit its title, optional subtitle, and ordered blocks. Titles and subtitles use plain text. Normal text and green highlight blocks use visual rich text. FAQ lists contain plain questions and rich answers. Home feed cards contain a plain title, rich description, link text, URL, and visibility. Add, remove, hide, and reorder list items or blocks. Save page saves changed blocks and shows a temporary notification.
+
+Each editor view has its own URL. Examples include `/admin/pages/parents`, `/admin/delegates/123`, `/admin/navigation`, and `/admin/editor-access/8184`. Refresh and browser history keep the selected view. The editor warns before you leave unsaved changes.
+
+In the Directus console, open Pages, select a page, then open its blocks. Directus uses its native list, relation, and rich text fields. Drag blocks or list items to change their order. Select Page title to edit the plain title and subtitle. Select FAQ list or Home feed cards to edit their items. Both editors use the same SiteContent records. Keep existing IDs unchanged. A Directus flow assigns IDs to new blocks. Records with IDs that start with `__setup_` are internal and must stay unchanged.
+
+Setup preserves existing IDs, HTML, and publication states. It copies old headings, subtitles, cards, and FAQs into structured fields once. Contact body text gets a separate block because its original record also contained the heading. Original FAQ records remain available as a record of the import. Later changes belong in the page blocks.
+
+Removing a block through the website hides and unlinks its record. Removing a block from the native page list unlinks it. Setup does not restore unlinked blocks. To restore a website-removed block, open SiteContent, clear its deleted flag, select its page, and set its visibility.
+
+In the website editor, open Navigation to change the Merch and Public Documents URLs. These are the only editable destinations. Website page URLs, link labels, order, and header layout stay in code. The header has centered links and no logo.
+
+In Directus, open SiteNavigation and select Merch or Public Documents. Edit `href`. The other fields are read-only, and the built-in destination fields are read-only. Existing internal records stay in the database for compatibility, but their values cannot change the website routes or header layout.
+
+The website service account has read access to `id` and `href` for those two records, and update access to `href` only. It has no navigation create or delete permission. Setup configures the existing restricted PNW Website Service role on Directus 10. For a custom role or Directus 11 policy, apply those same restrictions in the Directus console. The separate visibility job keeps its delegate-only permissions.
+
+A signed-in visitor sees their WCA avatar in the top right. If WCA has no avatar, the header shows their initial in the same position. The avatar links to the content editor. A browser with no login history shows no account control while signed out. After a verified login, the browser stores only `pnw.hasLoggedIn=true` in local storage. When that visitor signs out, the header shows the text link `login`. This flag grants no access and contains no token or personal data. Private session responses are never cached.
+
+For Parents and Competition Guide each contain their own FAQ list block. Questions, rich answers, visibility, and order are editable inside each page. The website uses its FAQ components and theme to display the items.
+
+The local preview runs with `yarn dev` at `http://localhost:3000`. Development uses `.next-dev`, while production builds use `.next`. A production build can run without stopping the local preview.

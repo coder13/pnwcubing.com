@@ -1,12 +1,18 @@
-import defaults from "@/content/default-content.json";
+import { pageIds } from "@/lib/editor/blocks";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { parseEditorRoute, editorUrl } from "@/lib/editor/routes";
+import { redirect, notFound } from "next/navigation";
 import { EditorWorkspace } from "@/components/editor/EditorWorkspace";
 import { AuthError, currentUser } from "@/lib/editor/auth";
 import { bootstrapEditorIds } from "@/lib/editor/config";
 import { listItems } from "@/lib/editor/directus";
 import type { Delegate } from "@/lib/directus";
-import type { FAQItem, SiteContent, SiteEditor } from "@/lib/editor/types";
+import type {
+  FAQItem,
+  NavigationItem,
+  SiteContent,
+  SiteEditor,
+} from "@/lib/editor/types";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -14,7 +20,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function Admin() {
+export default async function Admin({
+  params,
+}: {
+  params: { path?: string[] };
+}) {
   let identity;
   try {
     identity = await currentUser();
@@ -24,6 +34,13 @@ export default async function Admin() {
   }
   if (!identity) redirect("/login");
   const { user, isEditor } = identity;
+  if (!params.path?.length)
+    redirect(isEditor ? "/admin/pages" : "/admin/delegates");
+  const path = `/admin/${params.path.join("/")}`;
+  const route = parseEditorRoute(path);
+  if (!route) notFound();
+  if (!isEditor && route.collection !== "Delegates")
+    redirect("/admin/delegates");
 
   try {
     const delegates = await listItems<Delegate>("Delegates", {
@@ -37,13 +54,20 @@ export default async function Admin() {
         : {}),
       sort: "sort,name",
     });
-    const [faq, content, editors] = isEditor
+    if (
+      !isEditor &&
+      delegates.length === 1 &&
+      route.selected !== String(delegates[0].id)
+    )
+      redirect(editorUrl("Delegates", String(delegates[0].id)));
+    const [faq, content, editors, navigation] = isEditor
       ? await Promise.all([
           listItems<FAQItem>("FAQ", { sort: "sort,id" }),
           listItems<SiteContent>("SiteContent", { sort: "id" }),
           listItems<SiteEditor>("SiteEditors", { sort: "name" }),
+          listItems<NavigationItem>("SiteNavigation", { fields: "id,href" }),
         ])
-      : [[], [], []];
+      : [[], [], [], []];
     return (
       <main className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -59,17 +83,28 @@ export default async function Admin() {
         </div>
         <EditorWorkspace
           isEditor={isEditor}
+          initialPath={path}
+          navigation={navigation}
           delegates={delegates}
           faq={faq}
-          content={content.filter((item) =>
-            defaults.some((entry) => entry.id === item.id),
+          content={content.filter(
+            (item) =>
+              !!item.page && pageIds.includes(item.page) && !item.deleted,
           )}
           editors={editors}
           bootstrapIds={bootstrapEditorIds()}
         />
       </main>
     );
-  } catch {
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "digest" in error &&
+      typeof error.digest === "string" &&
+      error.digest.startsWith("NEXT_")
+    )
+      throw error;
     return <EditorUnavailable />;
   }
 }

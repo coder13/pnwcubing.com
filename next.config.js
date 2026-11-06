@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   // Node 24 supports the sanitizer's CommonJS-to-ESM parser import.
   experimental: { esmExternals: "loose" },
   images: {

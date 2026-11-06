@@ -21,6 +21,9 @@ function fixture(policies: boolean) {
       [{ id: "old", name: "Existing delegate", description: "Existing blurb" }],
     ],
   ]);
+  const relations: Item[] = [];
+  const flows: Item[] = [];
+  const operations: Item[] = [];
   const permissions = [
     {
       id: 1,
@@ -54,7 +57,9 @@ function fixture(policies: boolean) {
     if (path[0] === "collections") {
       if (method === "GET")
         data = Array.from(fields.keys()).map((collection) => ({ collection }));
-      else {
+      else if (method === "PATCH") {
+        assert.ok(fields.has(path[1]));
+      } else {
         fields.set(body.collection, body.fields);
         items.set(body.collection, []);
       }
@@ -91,6 +96,26 @@ function fixture(policies: boolean) {
           permissions.findIndex((rule) => rule.id === Number(path[1])),
           1,
         );
+    } else if (["flows", "operations"].includes(path[0])) {
+      const records = path[0] === "flows" ? flows : operations;
+      if (method === "GET") data = records;
+      else if (method === "POST") {
+        const record = { ...body, id: String(records.length + 1) };
+        records.push(record);
+        data = record;
+      } else {
+        const record = records.find((item) => item.id === path[1]);
+        Object.assign(record!, body);
+        data = record;
+      }
+    } else if (path[0] === "relations") {
+      if (method === "GET") data = relations;
+      else {
+        relations.push(body);
+        data = body;
+      }
+    } else if (path[0] === "roles") {
+      data = [];
     } else if (path[0] === "access") {
       assert.deepEqual(JSON.parse(url.searchParams.get("filter")!), {
         _and: [{ role: { _null: true } }, { user: { _null: true } }],
@@ -147,7 +172,7 @@ for (const policies of [false, true]) {
       state.items
         .get("SiteContent")!
         .filter((item) => item.status === "published").length,
-      20,
+      21,
     );
     assert.deepEqual(state.items.get("SiteEditors"), []);
     // A rerun must preserve later changes, hidden records, and deliberate FAQ deletions.
@@ -465,4 +490,123 @@ test("conflicting numeric identities stop setup before schema or permission writ
   };
   await assert.rejects(setupCms(), /duplicate WCA user ID/);
   assert.equal(state.permissions.length, 3);
+});
+
+test("setup seeds header links once and preserves edits and intentional deletions", async () => {
+  const state = fixture(false);
+  await setupCms();
+  const links = state.items.get("SiteNavigation")!;
+  assert.equal(links.length, 9);
+  links.find((item) => item.label === "Merch")!.href =
+    "https://shop.example.com";
+  links.splice(
+    links.findIndex((item) => item.label === "Public Documents"),
+    1,
+  );
+  const before = JSON.stringify(links);
+  await setupCms();
+  assert.equal(JSON.stringify(links), before);
+  const parentPage = state.items
+    .get("SiteContent")!
+    .find((item) => item.id === "parents.3")!;
+  assert.equal(parentPage.page, "parents");
+  assert.equal(parentPage.label, "Parent FAQ");
+  assert.equal(
+    state.fields.get("SiteContent")!.find((field) => field.field === "body")!
+      .meta &&
+      (
+        state.fields
+          .get("SiteContent")!
+          .find((field) => field.field === "body")!.meta as Item
+      ).interface,
+    "input-rich-text-html",
+  );
+});
+
+test("native Directus pages expose ordered visual blocks and rich FAQ repeaters without rewriting source HTML", async () => {
+  const state = fixture(false);
+  await setupCms();
+  const source = state.items
+    .get("SiteContent")!
+    .find((item) => item.id === "parents.3")!;
+  const body = source.body;
+  assert.equal(source.blockType, "faq");
+  assert.equal((source.faqItems as Item[]).length, 8);
+  assert.ok(state.items.get("Pages")!.some((item) => item.id === "parents"));
+  const schema = state.fields.get("SiteContent")!;
+  assert.equal(
+    (schema.find((field) => field.field === "body")!.meta as Item).interface,
+    "input-rich-text-html",
+  );
+  assert.equal(
+    (schema.find((field) => field.field === "faqItems")!.meta as Item)
+      .interface,
+    "list",
+  );
+  (source.faqItems as Item[])[0].answer = "<p>Edited rich answer</p>";
+  source.sort = 4;
+  await setupCms();
+  assert.equal(source.body, body);
+  assert.equal(
+    (source.faqItems as Item[])[0].answer,
+    "<p>Edited rich answer</p>",
+  );
+  assert.equal(source.sort, 4);
+});
+
+test("setup preserves blocks removed through the native page relationship", async () => {
+  const state = fixture(false);
+  await setupCms();
+  const removed = state.items
+    .get("SiteContent")!
+    .find((item) => item.id === "about.2")!;
+  removed.page = null;
+  await setupCms();
+  assert.equal(removed.page, null);
+  assert.ok(removed.body);
+});
+
+test("setup converts home cards and page headings once without replacing legacy HTML", async () => {
+  const state = fixture(false);
+  await setupCms();
+  const records = state.items.get("SiteContent")!;
+  const home = records.find((item) => item.id === "home.cards")!;
+  const parents = records.find((item) => item.id === "parents.1")!;
+  const contact = records.find((item) => item.id === "contact.1")!;
+  const legacyHome = home.body;
+  const legacyContact = contact.body;
+  assert.equal(home.blockType, "cards");
+  assert.equal((home.cardItems as Item[]).length, 3);
+  assert.equal(parents.blockType, "pageTitle");
+  assert.equal(parents.title, "For Parents");
+  assert.ok(String(parents.subtitle).includes("written by parents"));
+  assert.ok(
+    records.some(
+      (item) =>
+        item.id === "contact.block.00000000-0000-4000-8000-000000000001" &&
+        String(item.body).includes("Have a quick question?"),
+    ),
+  );
+  (home.cardItems as Item[])[0].title = "My edited card";
+  parents.title = "For families";
+  parents.subtitle = "A changed subtitle";
+  const count = records.length;
+  await setupCms();
+  assert.equal(home.body, legacyHome);
+  assert.equal(contact.body, legacyContact);
+  assert.equal((home.cardItems as Item[])[0].title, "My edited card");
+  assert.equal(parents.title, "For families");
+  assert.equal(parents.subtitle, "A changed subtitle");
+  assert.equal(records.length, count);
+  const fields = state.fields.get("SiteContent")!;
+  assert.equal(
+    (fields.find((field) => field.field === "cardItems")!.meta as Item)
+      .interface,
+    "list",
+  );
+  assert.equal(
+    (fields.find((field) => field.field === "subtitle")!.meta as Item)
+      .interface,
+    "input",
+  );
 });

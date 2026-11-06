@@ -5,6 +5,20 @@ export interface SiteContent {
   id: string;
   body: string;
   status: PublicationStatus;
+  page?: string;
+  label?: string;
+  blockType?: "text" | "highlight" | "faq" | "cards" | "pageTitle";
+  sort?: number;
+  title?: string;
+  subtitle?: string;
+  cardItems?: import("./blocks").HomeCardItem[];
+  deleted?: boolean;
+  faqItems?: {
+    id: string;
+    question: string;
+    answer: string;
+    status: "published" | "hidden";
+  }[];
 }
 
 export interface FAQItem {
@@ -21,11 +35,23 @@ export interface SiteEditor {
   active: boolean;
 }
 
+export interface NavigationItem {
+  id: number;
+  label: string;
+  href: string;
+  kind: "link" | "menu" | "brand";
+  parent: number;
+  newTab: boolean;
+  status: PublicationStatus;
+  sort: number;
+}
+
 export interface WcaUser {
   id: number;
   wca_id: string | null;
   name: string;
   delegate_status: string | null;
+  avatar?: { url?: string; thumb_url?: string };
 }
 
 export const contentCollections = [
@@ -33,5 +59,6 @@ export const contentCollections = [
   "FAQ",
   "SiteContent",
   "SiteEditors",
+  "SiteNavigation",
 ] as const;
 export type ContentCollection = (typeof contentCollections)[number];

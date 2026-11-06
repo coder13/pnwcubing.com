@@ -1,4 +1,4 @@
-import { CmsContent } from "@/components/CmsContent";
+import { CmsBlocks } from "@/components/CmsBlocks";
 import { CompetitionCard } from "@/components/CompetitionCard";
 import { fetchUpcomingComps } from "@/lib/wcaApi";
 import { Metadata } from "next";
@@ -50,17 +50,7 @@ export default async function Delegates() {
 
   return (
     <main className="flex flex-col justify-center flex-1 leading-8">
-      <section className="flex justify-center w-full px-4 space-y-4 py-4 bg-white">
-        <div className="flex flex-col md:w-2/3 w-full">
-          <CmsContent contentKey="competitions.1" />
-        </div>
-      </section>
-
-      <section className="flex justify-center w-full px-4 space-y-4 py-4 bg-secondary bg-opacity-80">
-        <div className="flex flex-col text-sm md:text-base md:w-2/3 w-full space-y-2">
-          <CmsContent contentKey="competitions.2" />
-        </div>
-      </section>
+      <CmsBlocks page="competitions" />
       <section className="flex justify-center w-full px-4 space-y-4 py-4 bg-white">
         <div className="flex flex-col md:w-2/3 w-full">
           <div className="flex flex-col w-full space-y-4 pb-12">

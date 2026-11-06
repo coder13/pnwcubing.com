@@ -1,18 +1,26 @@
 "use client";
 
 import classNames from "classnames";
+import { NoticeToast } from "./NoticeToast";
+import { NavigationEditor } from "./NavigationEditor";
+import { PagesList } from "./PagesList";
+import { PageEditor } from "./PageEditor";
+import { RichTextEditor } from "./RichTextEditor";
+import { blocksForPage } from "@/lib/editor/blocks";
+import { editablePages } from "@/lib/editor/pages";
 import { DelegateList, publicationClass } from "./DelegateList";
-import React, { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { FormEvent, useCallback, useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { editorUrl, parseEditorRoute } from "@/lib/editor/routes";
 import type { Delegate } from "@/lib/directus";
 import type {
   ContentCollection,
   FAQItem,
+  NavigationItem,
   SiteContent,
   SiteEditor,
 } from "@/lib/editor/types";
 import defaults from "@/content/default-content.json";
-import { safeHtml } from "@/lib/editor/html";
 
 type RecordData = Record<string, string | number | boolean>;
 type Props = {
@@ -22,15 +30,18 @@ type Props = {
   content: SiteContent[];
   editors: SiteEditor[];
   bootstrapIds: number[];
+  navigation?: NavigationItem[];
+  initialPath?: string;
 };
 const inputClass =
   "w-full rounded border border-gray-400 bg-white p-2 text-gray-900";
 const buttonClass =
   "rounded bg-primary px-4 py-2 text-white disabled:opacity-50";
 const labels: Record<ContentCollection, string> = {
+  SiteContent: "Pages",
   Delegates: "Delegates",
-  FAQ: "FAQ questions",
-  SiteContent: "Page content",
+  FAQ: "FAQs",
+  SiteNavigation: "Navigation",
   SiteEditors: "Editor access",
 };
 
@@ -38,10 +49,27 @@ export function EditorWorkspace(props: Props) {
   const router = useRouter();
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState("");
-  const [collection, setCollection] = useState<ContentCollection>("Delegates");
-  const [selected, setSelected] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [notice, setNotice] = useState("");
+  const pathname = usePathname();
+  const route = parseEditorRoute(
+    pathname ||
+      props.initialPath ||
+      (props.isEditor ? "/admin/pages" : "/admin/delegates"),
+  )!;
+  const collection = route.collection;
+  const contentPage = route.page;
+  const selected = route.selected;
+  const creating = route.creating;
+  const [notice, setToast] = useState<{ message: string; id: number } | null>(
+    null,
+  );
+  const setNotice = useCallback(
+    (message: string) =>
+      setToast((current) =>
+        message ? { message, id: (current?.id || 0) + 1 } : null,
+      ),
+    [],
+  );
+  const dismissNotice = useCallback(() => setToast(null), []);
   const [dirty, setDirty] = useState(false);
   const selectedId =
     !props.isEditor && props.delegates.length === 1
@@ -52,6 +80,7 @@ export function EditorWorkspace(props: Props) {
     FAQ: props.faq,
     SiteContent: props.content,
     SiteEditors: props.editors,
+    SiteNavigation: props.navigation || [],
   }[collection] as unknown as RecordData[];
   const record = records.find((item) => String(item.id) === selectedId);
   const regions = Array.from(
@@ -62,9 +91,24 @@ export function EditorWorkspace(props: Props) {
     function beforeUnload(event: BeforeUnloadEvent) {
       if (dirty) event.preventDefault();
     }
+    const currentUrl = window.location.href;
+    const currentState = window.history.state;
+    function onBack(event: PopStateEvent) {
+      if (!dirty) return;
+      if (window.confirm("Discard your unsaved changes?")) {
+        setDirty(false);
+        return;
+      }
+      event.stopImmediatePropagation();
+      window.history.pushState(currentState, "", currentUrl);
+    }
     window.addEventListener("beforeunload", beforeUnload);
-    return () => window.removeEventListener("beforeunload", beforeUnload);
-  }, [dirty]);
+    window.addEventListener("popstate", onBack, true);
+    return () => {
+      window.removeEventListener("beforeunload", beforeUnload);
+      window.removeEventListener("popstate", onBack, true);
+    };
+  }, [dirty, pathname]);
 
   function select(next: () => void) {
     if (dirty && !window.confirm("Discard your unsaved changes?")) return;
@@ -80,8 +124,7 @@ export function EditorWorkspace(props: Props) {
     )
       return;
     setDirty(false);
-    setSelected("");
-    setCreating(false);
+    router.replace("/admin/delegates");
     setSyncing(true);
     setSyncError("");
     setNotice("");
@@ -106,175 +149,235 @@ export function EditorWorkspace(props: Props) {
   }
 
   return (
-    <div className="space-y-5">
+    <div
+      className={
+        props.isEditor
+          ? "grid gap-6 md:grid-cols-[12rem_minmax(0,1fr)]"
+          : "space-y-5"
+      }
+    >
       {props.isEditor && (
-        <nav aria-label="Content types" className="flex flex-wrap gap-2">
-          {(Object.keys(labels) as ContentCollection[]).map((value) => (
-            <button
-              key={value}
-              aria-pressed={collection === value}
-              className={
-                collection === value ? buttonClass : "rounded border px-4 py-2"
-              }
-              onClick={() =>
-                select(() => {
-                  setCollection(value);
-                  setSelected("");
-                  setCreating(false);
-                })
-              }
-            >
-              {labels[value]}
-            </button>
-          ))}
+        <nav
+          aria-label="Editor navigation"
+          className="flex flex-wrap gap-2 self-start md:sticky md:top-4 md:flex-col md:rounded-lg md:border md:bg-gray-50 md:p-3"
+        >
+          {(Object.keys(labels) as ContentCollection[])
+            .filter((value) => value !== "FAQ")
+            .map((value) => (
+              <button
+                key={value}
+                aria-pressed={
+                  collection === value ||
+                  (collection === "FAQ" && value === "SiteContent")
+                }
+                className={
+                  collection === value ||
+                  (collection === "FAQ" && value === "SiteContent")
+                    ? `${buttonClass} text-left`
+                    : "rounded border px-4 py-2 text-left hover:bg-white"
+                }
+                onClick={() =>
+                  select(() => {
+                    router.push(editorUrl(value));
+                  })
+                }
+              >
+                {labels[value]}
+              </button>
+            ))}
         </nav>
       )}
-      <p>
-        {props.isEditor
-          ? "Create or select a record. Save your changes to update Directus."
-          : "You can edit your profile details and publication status. Your WCA account IDs are read-only. Either you or a full editor can show or hide your profile."}
-      </p>
-      <p role="status" aria-live="polite" className="text-green-800">
-        {notice}
-      </p>
-      {props.isEditor && collection === "Delegates" && (
-        <div className="space-y-2 rounded border p-4">
-          <button
-            type="button"
-            className={buttonClass}
-            disabled={syncing}
-            onClick={sync}
-          >
-            {syncing ? "Syncing…" : "Sync WCA delegates"}
-          </button>
-          <p className="text-sm text-gray-600">
-            Import active delegates from Pacific Northwest and Canada (West).
-            New profiles start hidden. Existing visibility, archives, and
-            profile details stay the same.
-          </p>
-          {syncError && (
-            <p role="alert" className="text-red-700">
-              {syncError}
+      <div className="min-w-0 space-y-5">
+        {notice && (
+          <NoticeToast
+            key={notice.id}
+            message={notice.message}
+            onDismiss={dismissNotice}
+          />
+        )}
+        {collection === "SiteNavigation" ? (
+          <NavigationEditor
+            key={JSON.stringify(props.navigation)}
+            links={props.navigation || []}
+            onDirty={setDirty}
+            onSaved={setNotice}
+          />
+        ) : collection === "SiteContent" ? (
+          (() => {
+            const page = editablePages.find((item) => item.id === contentPage);
+            const sections = page ? blocksForPage(page.id, props.content) : [];
+            return page ? (
+              <PageEditor
+                key={`${page.id}:${JSON.stringify(sections)}`}
+                page={page}
+                sections={sections}
+                onBack={() => select(() => router.push("/admin/pages"))}
+                onDirty={setDirty}
+                onSaved={setNotice}
+              />
+            ) : (
+              <PagesList
+                onSelect={(page) =>
+                  select(() => router.push(editorUrl("SiteContent", page)))
+                }
+              />
+            );
+          })()
+        ) : (
+          <>
+            <h2 className="text-2xl font-bold">
+              {props.isEditor ? labels[collection] : "Your profile"}
+            </h2>
+            <p>
+              {props.isEditor
+                ? "Create or select a record. Save your changes to update Directus."
+                : "You can edit your profile details and publication status. Your WCA account IDs are read-only. Either you or a full editor can show or hide your profile."}
             </p>
-          )}
-        </div>
-      )}
-      <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
-        <div className="space-y-3">
-          {props.isEditor && collection !== "SiteContent" && (
-            <button
-              className={buttonClass}
-              onClick={() =>
-                select(() => {
-                  setSelected("");
-                  setCreating(true);
-                })
-              }
-            >
-              Add{" "}
-              {collection === "FAQ"
-                ? "question"
-                : collection === "SiteEditors"
-                ? "editor"
-                : "delegate"}
-            </button>
-          )}
-          {collection === "Delegates" ? (
-            <DelegateList
-              delegates={props.delegates}
-              selectedId={creating ? "" : selectedId}
-              onSelect={(id) =>
-                select(() => {
-                  setSelected(id);
-                  setCreating(false);
-                })
-              }
-            />
-          ) : (
-            <ul
-              className="max-h-[60vh] space-y-1 overflow-auto"
-              aria-label={labels[collection]}
-            >
-              {records.map((item) => (
-                <li key={String(item.id)}>
+            {props.isEditor && collection === "Delegates" && (
+              <div className="space-y-2 rounded border p-4">
+                <button
+                  type="button"
+                  className={buttonClass}
+                  disabled={syncing}
+                  onClick={sync}
+                >
+                  {syncing ? "Syncing…" : "Sync WCA delegates"}
+                </button>
+                <p className="text-sm text-gray-600">
+                  Import active delegates from Pacific Northwest and Canada
+                  (West). New profiles start hidden. Existing visibility,
+                  archives, and profile details stay the same.
+                </p>
+                {syncError && (
+                  <p role="alert" className="text-red-700">
+                    {syncError}
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
+              <div className="space-y-3">
+                {props.isEditor && (
                   <button
-                    aria-pressed={selectedId === String(item.id)}
-                    className={classNames(
-                      "w-full rounded border p-3 text-left",
-                      publicationClass(item.status),
-                      {
-                        "ring-2 ring-primary ring-offset-1":
-                          selectedId === String(item.id) && !creating,
-                      },
-                    )}
+                    className={buttonClass}
                     onClick={() =>
                       select(() => {
-                        setSelected(String(item.id));
-                        setCreating(false);
+                        router.push(editorUrl(collection, "new"));
                       })
                     }
                   >
-                    <span className="block font-semibold">
-                      {String(
-                        item.name ||
-                          item.question ||
-                          defaults.find((entry) => entry.id === item.id)
-                            ?.label ||
-                          item.id,
-                      )}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {String(
-                        item.status ||
-                          (item.active === false
-                            ? "Inactive"
-                            : collection === "SiteEditors"
-                            ? `WCA user ${item.id}`
-                            : ""),
-                      )}
-                    </span>
+                    Add{" "}
+                    {collection === "FAQ"
+                      ? "question"
+                      : collection === "SiteEditors"
+                      ? "editor"
+                      : "delegate"}
                   </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {!records.length && !creating && (
-            <p>
-              {props.isEditor
-                ? "No records yet."
-                : "Your WCA account has no delegate profile here. Ask a site editor to add one."}
-            </p>
-          )}
-        </div>
-        <div>
-          {creating || record ? (
-            <RecordForm
-              key={`${collection}:${
-                creating ? "new" : selectedId
-              }:${JSON.stringify(record)}`}
-              collection={collection}
-              record={creating ? undefined : record}
-              isEditor={props.isEditor}
-              regions={regions}
-              locked={
-                collection === "SiteEditors" &&
-                !!record &&
-                props.bootstrapIds.includes(Number(record.id))
-              }
-              onDirty={setDirty}
-              onSaved={(id, message) => {
-                setSelected(id);
-                setCreating(false);
-                setDirty(false);
-                setNotice(message);
-              }}
-            />
-          ) : (
-            <p className="rounded border border-dashed p-6">
-              Select a record to edit it.
-            </p>
-          )}
-        </div>
+                )}
+                {collection === "Delegates" ? (
+                  <DelegateList
+                    delegates={props.delegates}
+                    selectedId={creating ? "" : selectedId}
+                    onSelect={(id) =>
+                      select(() => {
+                        router.push(editorUrl(collection, id));
+                      })
+                    }
+                  />
+                ) : (
+                  <ul
+                    className="max-h-[60vh] space-y-1 overflow-auto"
+                    aria-label={labels[collection]}
+                  >
+                    {records.map((item) => (
+                      <li key={String(item.id)}>
+                        <button
+                          aria-pressed={selectedId === String(item.id)}
+                          className={classNames(
+                            "w-full rounded border p-3 text-left",
+                            publicationClass(item.status),
+                            {
+                              "ring-2 ring-primary ring-offset-1":
+                                selectedId === String(item.id) && !creating,
+                            },
+                          )}
+                          onClick={() =>
+                            select(() => {
+                              router.push(
+                                editorUrl(collection, String(item.id)),
+                              );
+                            })
+                          }
+                        >
+                          <span className="block font-semibold">
+                            {String(
+                              item.name ||
+                                item.label ||
+                                item.question ||
+                                defaults
+                                  .filter((entry) => entry.id === item.id)
+                                  .map(
+                                    (entry) => `${entry.page}: ${entry.label}`,
+                                  )
+                                  .join("") ||
+                                item.id,
+                            )}
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            {String(
+                              item.status ||
+                                (item.active === false
+                                  ? "Inactive"
+                                  : collection === "SiteEditors"
+                                  ? `WCA user ${item.id}`
+                                  : ""),
+                            )}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {!records.length && !creating && (
+                  <p>
+                    {props.isEditor
+                      ? "No records yet."
+                      : "Your WCA account has no delegate profile here. Ask a site editor to add one."}
+                  </p>
+                )}
+              </div>
+              <div>
+                {creating || record ? (
+                  <RecordForm
+                    key={`${collection}:${
+                      creating ? "new" : selectedId
+                    }:${JSON.stringify(record)}`}
+                    collection={collection}
+                    record={creating ? undefined : record}
+                    isEditor={props.isEditor}
+                    regions={regions}
+                    navigation={props.navigation || []}
+                    locked={
+                      collection === "SiteEditors" &&
+                      !!record &&
+                      props.bootstrapIds.includes(Number(record.id))
+                    }
+                    onDirty={setDirty}
+                    onSaved={(id, message) => {
+                      router.replace(editorUrl(collection, id));
+                      setDirty(false);
+                      setNotice(message);
+                    }}
+                  />
+                ) : (
+                  <p className="rounded border border-dashed p-6">
+                    Select a record to edit it.
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -285,6 +388,7 @@ function RecordForm({
   record,
   isEditor,
   regions,
+  navigation,
   locked,
   onDirty,
   onSaved,
@@ -293,6 +397,7 @@ function RecordForm({
   record?: RecordData;
   isEditor: boolean;
   regions: string[];
+  navigation: NavigationItem[];
   locked: boolean;
   onDirty: (value: boolean) => void;
   onSaved: (id: string, message: string) => void;
@@ -300,7 +405,6 @@ function RecordForm({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [preview, setPreview] = useState(false);
   const [wcaStatus, setWcaStatus] = useState(String(record?.wcaStatus || ""));
   const fields: Record<ContentCollection, RecordData> = {
     Delegates: {
@@ -315,6 +419,7 @@ function RecordForm({
     },
     FAQ: { question: "", answer: "", status: "draft", sort: 0 },
     SiteContent: { body: "", status: "published" },
+    SiteNavigation: { href: "" },
     SiteEditors: { name: "", active: true, ...(!record ? { id: "" } : {}) },
   };
   const [values, setValues] = useState<RecordData>(() =>
@@ -430,6 +535,8 @@ function RecordForm({
           ? "question"
           : collection === "SiteEditors"
           ? "editor"
+          : collection === "SiteNavigation"
+          ? "header link"
           : "delegate"}
       </h2>
       {collection === "SiteContent" && (
@@ -488,9 +595,14 @@ function RecordForm({
                 region: "Local region",
                 id: "WCA user ID (number)",
                 description: "Blurb",
-                body: "Content (HTML)",
+                body: "Content",
                 sort: "Display order",
                 active: "Allow full content access",
+                href: "Destination URL",
+                label: "Link text",
+                kind: "Link type",
+                parent: "Parent menu",
+                newTab: "Open in a new tab",
               } as Record<string, string>
             )[name] || name[0].toUpperCase() + name.slice(1);
           const fieldId = `editor-${collection}-${name}`;
@@ -499,7 +611,7 @@ function RecordForm({
               <label htmlFor={fieldId} className="font-semibold">
                 {label}
               </label>
-              {name === "active" ? (
+              {name === "active" || name === "newTab" ? (
                 <input
                   id={fieldId}
                   type="checkbox"
@@ -524,16 +636,14 @@ function RecordForm({
                   )}
                 </select>
               ) : ["body", "answer", "description"].includes(name) ? (
-                <textarea
-                  id={fieldId}
-                  className={`${inputClass} ${
-                    name === "body" ? "font-mono text-sm" : ""
-                  }`}
-                  rows={name === "body" ? 18 : 8}
-                  maxLength={name === "body" ? 100000 : 10000}
-                  value={String(value)}
-                  onChange={(event) => field(name, event.target.value)}
-                />
+                <div id={fieldId}>
+                  <RichTextEditor
+                    label={label}
+                    value={String(value)}
+                    onChange={(value) => field(name, value)}
+                    disabled={busy || locked}
+                  />
+                </div>
               ) : (
                 <input
                   id={fieldId}
@@ -546,14 +656,18 @@ function RecordForm({
                       : "text"
                   }
                   min={name === "id" || name === "wcaUserId" ? 1 : 0}
-                  maxLength={300}
+                  maxLength={name === "href" ? 2048 : 300}
                   readOnly={
                     name === "wcaId" ||
                     (name === "wcaUserId" && (!isEditor || !!record?.wcaUserId))
                   }
-                  required={["name", "wcaUserId", "question", "id"].includes(
-                    name,
-                  )}
+                  required={[
+                    "name",
+                    "wcaUserId",
+                    "question",
+                    "id",
+                    "label",
+                  ].includes(name)}
                   list={name === "region" ? "delegate-regions" : undefined}
                   value={String(value)}
                   onChange={(event) =>
@@ -588,31 +702,6 @@ function RecordForm({
             <option key={region} value={region} />
           ))}
         </datalist>
-        {collection === "SiteContent" && (
-          <>
-            <p className="text-sm">
-              Use HTML for headings, paragraphs, links, lists, and images.
-              Scripts and unsafe HTML are removed. New style classes need a code
-              change.
-            </p>
-            <button
-              type="button"
-              className="rounded border px-4 py-2"
-              onClick={() => setPreview(!preview)}
-            >
-              {preview ? "Hide preview" : "Show preview"}
-            </button>
-            {preview && (
-              <div
-                aria-label="Content preview"
-                className="cms-content rounded border p-4"
-                dangerouslySetInnerHTML={{
-                  __html: safeHtml(String(values.body)),
-                }}
-              />
-            )}
-          </>
-        )}
         <div className="flex gap-3">
           <button type="submit" className={buttonClass}>
             {busy ? "Saving…" : "Save changes"}

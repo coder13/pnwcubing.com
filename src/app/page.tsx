@@ -1,6 +1,5 @@
-import { LandingPageCards } from "@/components/LandingPage/Cards";
 import { Metadata } from "next";
-import { CmsContent } from "@/components/CmsContent";
+import { CmsBlocks } from "@/components/CmsBlocks";
 
 export const metadata: Metadata = {
   title: "Home | pnwcubing",
@@ -21,16 +20,7 @@ export default function Home() {
         className="grid grid-rows-[min_content] items-center justify-center overflow-auto"
       >
         <div className="flex flex-col h-max drop-shadow-md text-white text-center p-4 justify-evenly">
-          <h1
-            className="text-6xl md:text-7xl h-80"
-            style={{
-              textShadow:
-                "2px 2px 4px rgba(0, 0, 0, 0.5)" /* Optional text shadow for better readability */,
-            }}
-          >
-            <CmsContent contentKey="home.title" as="span" />
-          </h1>
-          <LandingPageCards />
+          <CmsBlocks page="home" bare />
         </div>
       </section>
     </main>

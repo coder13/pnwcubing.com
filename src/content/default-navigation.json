@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "label": "Pacific Northwest Cubing Logo",
+    "href": "/",
+    "kind": "brand",
+    "parent": 0,
+    "newTab": false,
+    "status": "published",
+    "sort": 0
+  },
+  {
+    "id": 2,
+    "label": "Competitions",
+    "href": "/competitions",
+    "kind": "link",
+    "parent": 0,
+    "newTab": false,
+    "status": "published",
+    "sort": 1
+  },
+  {
+    "id": 3,
+    "label": "Delegates",
+    "href": "/delegates",
+    "kind": "link",
+    "parent": 0,
+    "newTab": false,
+    "status": "published",
+    "sort": 2
+  },
+  {
+    "id": 4,
+    "label": "For Parents",
+    "href": "/for-parents",
+    "kind": "link",
+    "parent": 0,
+    "newTab": false,
+    "status": "published",
+    "sort": 3
+  },
+  {
+    "id": 5,
+    "label": "Merch",
+    "href": "https://speedcubeshop.com/collections/pacific-northwest-cubing-collection",
+    "kind": "link",
+    "parent": 0,
+    "newTab": true,
+    "status": "published",
+    "sort": 4
+  },
+  {
+    "id": 6,
+    "label": "About",
+    "href": "",
+    "kind": "menu",
+    "parent": 0,
+    "newTab": false,
+    "status": "published",
+    "sort": 5
+  },
+  {
+    "id": 7,
+    "label": "About Us",
+    "href": "/about",
+    "kind": "link",
+    "parent": 6,
+    "newTab": false,
+    "status": "published",
+    "sort": 1
+  },
+  {
+    "id": 8,
+    "label": "Public Documents",
+    "href": "https://drive.google.com/drive/folders/1_8lCU2c5EOrkil0AOhS0EmhOLucsR5Ou?usp=drive_link",
+    "kind": "link",
+    "parent": 6,
+    "newTab": true,
+    "status": "published",
+    "sort": 2
+  },
+  {
+    "id": 9,
+    "label": "Contact",
+    "href": "/contact",
+    "kind": "link",
+    "parent": 0,
+    "newTab": false,
+    "status": "published",
+    "sort": 6
+  }
+]

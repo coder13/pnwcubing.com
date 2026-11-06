@@ -1,0 +1,72 @@
+{
+  "headings": {
+    "home": {
+      "id": "home.title",
+      "title": "Pacific Northwest Cubing",
+      "subtitle": "",
+      "remainder": ""
+    },
+    "competitions": {
+      "id": "competitions.1",
+      "title": "Upcoming Competitions",
+      "subtitle": "",
+      "remainder": ""
+    },
+    "delegates": {
+      "id": "delegates.1",
+      "title": "Delegates",
+      "subtitle": "",
+      "remainder": ""
+    },
+    "parents": {
+      "id": "parents.1",
+      "title": "For Parents",
+      "subtitle": "Everything on this page was written by parents, for parents",
+      "remainder": ""
+    },
+    "competing": {
+      "id": "competing.1",
+      "title": "PNW Competitions",
+      "subtitle": "",
+      "remainder": ""
+    },
+    "about": {
+      "id": "about.1",
+      "title": "About",
+      "subtitle": "",
+      "remainder": ""
+    },
+    "contact": {
+      "id": "contact.1",
+      "title": "Contact",
+      "subtitle": "Get in touch with us",
+      "remainder": "<div><h2 class=\"text-2xl\">Have a quick question?</h2><p>If you have any questions, comments, or concerns, please feel free to reach out to us at <a class=\"text-primary hover:underline\" href=\"mailto:contact@pnwcubing.com\" target=\"_blank\" rel=\"noreferrer\">contact@pnwcubing.com</a></p></div><div><h2 class=\"text-2xl\">Want to organize a competition?</h2><p>Competitions are not centrally organized and are rather organized by individuals willing to help</p><p>If you are interested in organizing a competition, please check out our <a class=\"text-primary hover:underline\" href=\"/delegates\">Delegates</a>, identify your local delegate and reach out to them.</p></div>"
+    }
+  },
+  "cards": [
+    {
+      "id": "home-card-1",
+      "title": "Competitions",
+      "body": "<p class=\"text-sm md:text-base text-gray-700\">We host competitions throughout the year. Check out our upcoming competitions and past results.</p>",
+      "href": "/competitions",
+      "linkText": "View Competitions",
+      "status": "published"
+    },
+    {
+      "id": "home-card-2",
+      "title": "PNW Cubing Facebook Group",
+      "body": "<p class=\"text-sm md:text-base text-gray-700\">If you or a parent have a Facebook account, we’d highly recommend joining our Facebook group to hear about competitions in the Pacific Northwest before they’re announced and keep in touch with cubers in the area.</p>",
+      "href": "https://www.facebook.com/groups/pnwcubing",
+      "linkText": "Join Group",
+      "status": "published"
+    },
+    {
+      "id": "home-card-3",
+      "title": "Subscribe to the PNW Monthly Newsletter!",
+      "body": "<p class=\"text-sm md:text-base text-gray-700\">Your email will not be distributed to anyone. It will only be used for the PNW Monthly Newsletter.</p>",
+      "href": "http://eepurl.com/h3T0EL",
+      "linkText": "Subscribe",
+      "status": "published"
+    }
+  ]
+}

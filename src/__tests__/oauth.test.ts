@@ -283,3 +283,46 @@ test("sync and account lookup reject anonymous and non-editor accounts", async (
     403,
   );
 });
+
+test("the header session endpoint returns only verified display details and never caches them", async () => {
+  const { GET: session } =
+    require("../app/api/auth/session/route") as typeof import("../app/api/auth/session/route");
+  global.fetch = async () =>
+    assert.fail("An anonymous visitor needs no upstream requests");
+  const anonymous = await context("", session);
+  assert.deepEqual(await anonymous.json(), { user: null });
+  assert.ok(anonymous.headers.get("cache-control")?.includes("no-store"));
+  assert.equal(anonymous.headers.get("vary"), "Cookie");
+  const { seal } = await import("../lib/editor/crypto");
+  const cookie = `pnw_session=${seal(
+    { accessToken: "secret-token", expiresAt: Date.now() + 60000 },
+    "session",
+  )}`;
+  process.env.CONTENT_EDITOR_WCA_IDS = "8184";
+  global.fetch = async () =>
+    Response.json({
+      me: {
+        id: 8184,
+        name: "Cailyn",
+        wca_id: "2016HOOV01",
+        delegate_status: "delegate",
+        email: "private@example.com",
+        avatar: {
+          thumb_url: "https://avatars.worldcubeassociation.org/photo.png",
+        },
+      },
+    });
+  const verified = await context(cookie, session);
+  assert.deepEqual(await verified.json(), {
+    user: {
+      name: "Cailyn",
+      avatar: "https://avatars.worldcubeassociation.org/photo.png",
+    },
+  });
+  global.fetch = async () => new Response(null, { status: 401 });
+  assert.deepEqual(await (await context(cookie, session)).json(), {
+    user: null,
+  });
+  global.fetch = async () => new Response(null, { status: 503 });
+  assert.equal((await context(cookie, session)).status, 503);
+});
