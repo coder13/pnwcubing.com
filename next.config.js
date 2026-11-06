@@ -16,6 +16,12 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/:path*",
+        has: [{ type: "host", value: "pnwcubing.com" }],
+        destination: "https://www.pnwcubing.com/:path*",
+        permanent: true,
+      },
+      {
         source: "/feedback",
         destination:
           "https://docs.google.com/forms/d/13OjyKJWGZP3UmTrPcfF5vbJGboGigyphanHj7oN8eWg",

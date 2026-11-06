@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import { afterEach, test } from "node:test";
+import { siteOrigin } from "../lib/editor/config";
 import { unseal } from "../lib/editor/crypto";
 import type { OAuthState, Session } from "../lib/editor/auth";
 
 Object.assign(globalThis, { AsyncLocalStorage });
+const { requireSameOrigin } =
+  require("../lib/editor/auth") as typeof import("../lib/editor/auth");
 // Supply the same request context that Next uses for HttpOnly cookies.
 const {
   requestAsyncStorage,
@@ -31,6 +34,7 @@ const originalFetch = global.fetch;
 afterEach(() => {
   global.fetch = originalFetch;
   process.env.CONTENT_EDITOR_WCA_IDS = "";
+  process.env.SITE_URL = "https://www.pnwcubing.com";
 });
 function context<T>(cookie: string, fn: () => T): T {
   return requestAsyncStorage.run(
@@ -40,7 +44,9 @@ function context<T>(cookie: string, fn: () => T): T {
 }
 
 async function startLogin() {
-  const response = await login();
+  const response = await login(
+    new Request("https://www.pnwcubing.com/api/auth/login"),
+  );
   assert.equal(response.status, 307);
   const location = new URL(response.headers.get("location")!);
   const cookie = response.cookies.get("pnw_oauth")!.value;
@@ -325,4 +331,61 @@ test("the header session endpoint returns only verified display details and neve
   });
   global.fetch = async () => new Response(null, { status: 503 });
   assert.equal((await context(cookie, session)).status, 503);
+});
+
+test("production login normalizes the apex configuration and accepts saves only from the canonical host", async () => {
+  process.env.SITE_URL = "https://pnwcubing.com";
+  assert.equal(siteOrigin(), "https://www.pnwcubing.com");
+  await startLogin();
+  const saveRequest = (origin: string) =>
+    new Request("https://www.pnwcubing.com/api/editor/Delegates/24", {
+      method: "PATCH",
+      headers: { Origin: origin },
+    });
+  assert.doesNotThrow(() =>
+    requireSameOrigin(saveRequest("https://www.pnwcubing.com")),
+  );
+  assert.throws(
+    () => requireSameOrigin(saveRequest("https://pnwcubing.com")),
+    /did not come from/,
+  );
+  assert.throws(
+    () => requireSameOrigin(saveRequest("https://evil.example")),
+    /did not come from/,
+  );
+});
+
+test("login reaches the configured host before setting the OAuth state cookie", async () => {
+  const response = await login(
+    new Request("https://pnwcubing.com/api/auth/login"),
+  );
+  assert.equal(response.status, 307);
+  assert.equal(
+    response.headers.get("location"),
+    "https://www.pnwcubing.com/api/auth/login",
+  );
+  assert.equal(response.cookies.get("pnw_oauth"), undefined);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+});
+
+test("localhost and explicit preview origins stay unchanged", () => {
+  for (const origin of [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://preview.example.com",
+  ]) {
+    process.env.SITE_URL = origin;
+    assert.equal(siteOrigin(), origin);
+  }
+});
+
+test("the apex website redirects all paths to the canonical public host", async () => {
+  const config = require("../../next.config.js");
+  const redirects = await config.redirects();
+  assert.deepEqual(redirects[0], {
+    source: "/:path*",
+    has: [{ type: "host", value: "pnwcubing.com" }],
+    destination: "https://www.pnwcubing.com/:path*",
+    permanent: true,
+  });
 });

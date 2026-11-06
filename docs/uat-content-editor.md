@@ -78,3 +78,5 @@ The production build, TypeScript, ESLint, and all 107 tests passed after these c
 The link editor uses a small form beside the selected link. An authenticated browser check opened the Contact page’s Delegates link with its original text and URL. Enter applied a URL change to the local draft without saving the page. Cmd+K reopened the same link, and Remove link preserved its text. The test draft was discarded without changing Directus content. All 115 tests, ESLint, TypeScript, and the production build passed.
 
 Rich text toolbars now use icons with hover labels and accessible names. Formatting groups have separators, and active controls use the site color. The authenticated Contact editor preview showed the icon toolbar without unsaved changes.
+
+The delegate form no longer shows the WCA region, role, or general visibility explanation above its fields. Production uses the `www` host for login callbacks, cookies, and save requests. Tests cover apex configuration values, strict origin checks, host redirects before cookie creation, and unchanged local and preview origins. All 119 tests, ESLint, TypeScript, and the production build passed.

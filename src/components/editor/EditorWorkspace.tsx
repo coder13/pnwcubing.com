@@ -551,34 +551,23 @@ function RecordForm({
           Use the numeric WCA user ID.
         </p>
       )}
-      {collection === "Delegates" && (
-        <div className="space-y-1 text-sm text-gray-600">
-          <p>
-            WCA region: {String(record?.wcaRegion || "Additional delegate")}.
-            The local region below is separate.
-          </p>
-          <p>
-            Either the delegate or a full editor can publish or hide this
-            profile. Only a full editor can archive or restore it.
-          </p>
-          <p>
-            WCA role:{" "}
-            {wcaStatus ? wcaStatus.replaceAll("_", " ") : "Not loaded"}.
-          </p>
-          {wcaStatus === "trainee_delegate" && (
-            <p className="font-semibold text-amber-900">
-              Trainee delegate emails stay private and do not appear on the
-              public page.
-            </p>
-          )}
-          {!record && (
-            <p>
-              Add any WCA account by its numeric user ID. A competitor ID is
-              optional.
-            </p>
-          )}
-        </div>
-      )}
+      {collection === "Delegates" &&
+        (wcaStatus === "trainee_delegate" || !record) && (
+          <div className="space-y-1 text-sm text-gray-600">
+            {wcaStatus === "trainee_delegate" && (
+              <p className="font-semibold text-amber-900">
+                Trainee delegate emails stay private and do not appear on the
+                public page.
+              </p>
+            )}
+            {!record && (
+              <p>
+                Add any WCA account by its numeric user ID. A competitor ID is
+                optional.
+              </p>
+            )}
+          </div>
+        )}
       {locked && (
         <p>This account has permanent access through the site configuration.</p>
       )}

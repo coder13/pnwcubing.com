@@ -6,14 +6,19 @@ import { seal } from "@/lib/editor/crypto";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const origin = siteOrigin();
+    if (new URL(request.url).origin !== origin)
+      return NextResponse.redirect(new URL("/api/auth/login", origin), {
+        headers: { "Cache-Control": "no-store" },
+      });
     const state = randomBytes(32).toString("base64url");
     const verifier = randomBytes(32).toString("base64url");
     const url = new URL("https://www.worldcubeassociation.org/oauth/authorize");
     url.search = new URLSearchParams({
       client_id: requiredEnv("WCA_CLIENT_ID"),
-      redirect_uri: `${siteOrigin()}/api/auth/callback`,
+      redirect_uri: `${origin}/api/auth/callback`,
       response_type: "code",
       scope: "public",
       state,

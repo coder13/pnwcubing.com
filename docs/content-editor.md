@@ -27,6 +27,8 @@ Regions are text fields. Select an existing region or enter a new region. Smalle
 6. Set `SITE_URL` to the exact website origin.
 7. Generate `SESSION_SECRET` with `openssl rand -hex 32`.
 
+Production uses `https://www.pnwcubing.com`. The website redirects the apex domain to this host. The origin helper also treats an apex `SITE_URL` value as the `www` origin. Login reaches the configured host before it sets its state cookie.
+
 Use separate OAuth credentials for a preview deployment. Set its exact origin in `SITE_URL` and its callback in WCA.
 
 The website uses the authorization code flow with state and PKCE. It requests only the public WCA scope. The access token stays in an encrypted, HttpOnly session cookie. The browser cannot read it. The session expires with the WCA token, within eight hours at most. Closing a browser session removes the cookie unless the browser restores that session.

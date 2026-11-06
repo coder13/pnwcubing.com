@@ -15,6 +15,8 @@ export function siteOrigin(): string {
   ) {
     throw new Error("SITE_URL must use HTTPS, except on localhost.");
   }
+  // Keep production cookies, callbacks, and same-origin checks on the public host.
+  if (url.hostname === "pnwcubing.com") url.hostname = "www.pnwcubing.com";
   return url.origin;
 }
 
