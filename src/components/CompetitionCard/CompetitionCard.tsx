@@ -1,5 +1,3 @@
-"use client";
-
 import "@cubing/icons";
 
 // import { isLikelyStateChampionship } from "@/lib/competitions";

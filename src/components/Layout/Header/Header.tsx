@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
+import classNames from "classnames";
 import Image from "next/image";
 import Link from "next/link";
 import { Dropdown, MegaMenu, Navbar } from "flowbite-react";
@@ -11,6 +12,46 @@ import { AccountControl, useHeaderAccount } from "./AccountControl";
 export function Header({ navigation }: { navigation: NavigationItem[] }) {
   const pathname = usePathname();
   const account = useHeaderAccount();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigationRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
+  const menuId = useId();
+  useEffect(() => setMobileMenuOpen(false), [pathname]);
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    function closeOnDesktop() {
+      if (desktop.matches) setMobileMenuOpen(false);
+    }
+    if (desktop.matches) {
+      closeOnDesktop();
+      return;
+    }
+    function clickAway(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        !navigationRef.current?.contains(event.target)
+      )
+        setMobileMenuOpen(false);
+    }
+    function escape(event: KeyboardEvent) {
+      if (
+        event.key !== "Escape" ||
+        navigationRef.current?.querySelector('[role="menu"]')
+      )
+        return;
+      setMobileMenuOpen(false);
+      toggleRef.current?.focus();
+    }
+    document.addEventListener("pointerdown", clickAway, true);
+    document.addEventListener("keydown", escape);
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => {
+      document.removeEventListener("pointerdown", clickAway, true);
+      document.removeEventListener("keydown", escape);
+      desktop.removeEventListener("change", closeOnDesktop);
+    };
+  }, [mobileMenuOpen]);
   const roots = navigation.filter(
     (item) => item.parent === 0 && item.kind !== "brand",
   );
@@ -42,11 +83,15 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
         },
       }}
     >
-      <div className="flex w-full flex-wrap items-center justify-between gap-x-6">
+      <div
+        ref={navigationRef}
+        className="flex w-full flex-wrap items-center justify-between gap-x-6"
+      >
         <Navbar.Brand
           href="/"
           as={Link}
           aria-label="PNW Cubing home"
+          onClick={() => setMobileMenuOpen(false)}
           className="shrink-0 p-2 lg:mr-6 lg:p-0"
         >
           <Image
@@ -74,9 +119,24 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
               <AccountControl {...account} />
             </div>
           )}
-          <Navbar.Toggle aria-label="Toggle navigation" />
+          <Navbar.Toggle
+            aria-label="Toggle navigation"
+            aria-expanded={mobileMenuOpen}
+            aria-controls={menuId}
+            onClick={(event) => {
+              toggleRef.current = event.currentTarget;
+              setMobileMenuOpen((open) => !open);
+            }}
+          />
         </div>
-        <Navbar.Collapse className="lg:mx-auto">
+        {/* Flowbite initializes its own open state. Control visibility here for click-away dismissal. */}
+        <Navbar.Collapse
+          id={menuId}
+          className={classNames(
+            "lg:mx-auto",
+            mobileMenuOpen ? "block" : "hidden",
+          )}
+        >
           {roots.map((item) => {
             const children = navigation.filter(
               (child) => child.parent === item.id,
@@ -112,6 +172,7 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
                       key={child.id}
                       as={Link}
                       href={child.href}
+                      onClick={() => setMobileMenuOpen(false)}
                       target={child.newTab ? "_blank" : undefined}
                       rel={child.newTab ? "noopener noreferrer" : undefined}
                       aria-current={
@@ -128,6 +189,7 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
                 key={item.id}
                 as={Link}
                 href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
                 active={pathname === item.href}
                 aria-current={pathname === item.href ? "page" : undefined}
                 target={item.newTab ? "_blank" : undefined}
@@ -141,6 +203,7 @@ export function Header({ navigation }: { navigation: NavigationItem[] }) {
             <li className="lg:hidden">
               <Link
                 href="/login"
+                onClick={() => setMobileMenuOpen(false)}
                 className="block py-2 pl-3 pr-4 text-sm text-gray-700 hover:bg-gray-50"
               >
                 login

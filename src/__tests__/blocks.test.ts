@@ -81,7 +81,7 @@ test("blocks and FAQ items reorder without changing content and removed blocks s
   );
 });
 
-test("the theme renders green highlights and sanitized rich FAQ answers with plain titles", () => {
+test("the theme renders green highlights and always-visible rich FAQ answers with plain titles", () => {
   const green = renderToStaticMarkup(
     React.createElement(PageBlockView, {
       block: defaultPageBlocks("parents")[1],
@@ -104,6 +104,8 @@ test("the theme renders green highlights and sanitized rich FAQ answers with pla
   );
   assert.ok(html.includes("&lt;img"));
   assert.ok(html.includes("<strong>Good</strong>"));
+  assert.ok(!html.includes("<details"));
+  assert.ok(!html.includes("<summary"));
   assert.ok(!html.includes("<script>"));
 });
 

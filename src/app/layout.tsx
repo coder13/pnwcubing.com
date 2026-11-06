@@ -9,6 +9,9 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 
 const inter = Inter({ subsets: ["latin"] });
 
+// Render every page on request. Individual public API requests can still be cached.
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Pacific Northwest Cubing",
   description: "The official home to all things Pacific Northwest Cubing",

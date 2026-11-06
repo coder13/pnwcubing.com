@@ -217,8 +217,10 @@ The website service account has read access to `id` and `href` for those two rec
 
 A signed-in visitor sees their WCA avatar in the top right. If WCA has no avatar, the header shows their initial in the same position. The avatar links to the content editor. A browser with no login history shows no account control while signed out. After a verified login, the browser stores only `pnw.hasLoggedIn=true` in local storage. When that visitor signs out, the header shows the text link `login`. This flag grants no access and contains no token or personal data. Private session responses are never cached.
 
-For Parents and Competition Guide each contain their own FAQ list block. Questions, rich answers, visibility, and order are editable inside each page. The website uses its FAQ components and theme to display the items.
+For Parents and Competition Guide each contain their own FAQ list block. Questions, rich answers, visibility, and order are editable inside each page. Each answer appears below its question. Visitors do not need to expand a question to read it.
+
+The server renders every page before it appears. Pages wait for their content without a loading screen. Public page text, FAQ answers, delegate profiles, and competition details are in the initial HTML. Competition requests use a 60-second cache. Directus content and private editor data load on each request.
 
 The local preview runs with `yarn dev` at `http://localhost:3000`. Development uses `.next-dev`, while production builds use `.next`. A production build can run without stopping the local preview.
 
-On mobile, the logo and hamburger use matching outer margins. The hamburger opens a white panel over the page. Long menus scroll within the available screen height. Returning visitors see the signed-out `login` link inside this panel. Signed-in visitors keep their avatar beside the hamburger.
+On mobile, the logo and hamburger use matching outer margins. The hamburger opens a white panel over the page. A tap outside the panel closes it. Selecting a link or pressing Escape also closes it. Long menus scroll within the available screen height. Returning visitors see the signed-out `login` link inside this panel. Signed-in visitors keep their avatar beside the hamburger.

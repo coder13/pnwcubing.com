@@ -43,9 +43,7 @@ async function getCompetitions() {
     );
 }
 
-export const revalidate = 60; // revalidate api every 60 seconds
-
-export default async function Delegates() {
+export default async function Competitions() {
   const competitions = await getCompetitions();
 
   return (

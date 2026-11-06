@@ -69,19 +69,17 @@ export function PageBlockView({
         <h2 className="text-2xl font-semibold">
           {block.title || "Frequently Asked Questions"}
         </h2>
-        <div className="divide-y rounded-lg border bg-white text-gray-900">
+        <div className="space-y-6 text-gray-900">
           {block.faqItems
             .filter((item) => item.status !== "hidden")
             .map((item) => (
-              <details key={item.id} className="p-4">
-                <summary className="cursor-pointer font-semibold text-primary">
-                  {item.question}
-                </summary>
+              <section key={item.id} className="space-y-2">
+                <h3 className="font-semibold">{item.question}</h3>
                 <div
-                  className="rich-text mt-3"
+                  className="rich-text"
                   dangerouslySetInnerHTML={{ __html: safeHtml(item.answer) }}
                 />
-              </details>
+              </section>
             ))}
         </div>
       </div>

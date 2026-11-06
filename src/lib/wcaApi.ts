@@ -23,6 +23,7 @@ export const fetchUpcomingComps = async (
       query +
       "&start=" +
       new Date().toISOString().split("T")[0],
+    { next: { revalidate: 60 } },
   );
 
   if (!res.ok) {
@@ -43,6 +44,7 @@ interface APIPerson {
 export const getPerson = async (wcaId: string): Promise<APIPerson | null> => {
   const res = await fetch(
     `https://www.worldcubeassociation.org/api/v0/persons/${wcaId}`,
+    { next: { revalidate: 60 } },
   );
 
   if (!res.ok) {

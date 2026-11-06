@@ -9,8 +9,6 @@ export const metadata: Metadata = {
   title: "Delegates | pnwcubing",
 };
 
-export const revalidate = 5; // revalidate api every 5 seconds
-
 export default async function Delegates() {
   const delegates = await getPublicDelegates();
 

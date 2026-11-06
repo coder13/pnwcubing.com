@@ -74,14 +74,18 @@ The title and card migration completed after a database backup. All 35 delegate 
 
 The production build, TypeScript, ESLint, and all 107 tests passed after these changes. A repeated live setup also completed. The page index shows names, URLs, and Edit and View actions without publication counts. The local preview remained running and returned HTTP 200 after the build.
 
-
 The link editor uses a small form beside the selected link. An authenticated browser check opened the Contact page’s Delegates link with its original text and URL. Enter applied a URL change to the local draft without saving the page. Cmd+K reopened the same link, and Remove link preserved its text. The test draft was discarded without changing Directus content. All 115 tests, ESLint, TypeScript, and the production build passed.
 
 Rich text toolbars now use icons with hover labels and accessible names. Formatting groups have separators, and active controls use the site color. The authenticated Contact editor preview showed the icon toolbar without unsaved changes.
 
 The delegate form no longer shows the WCA region, role, or general visibility explanation above its fields. Production uses the `www` host for login callbacks, cookies, and save requests. Tests cover apex configuration values, strict origin checks, host redirects before cookie creation, and unchanged local and preview origins. All 119 tests, ESLint, TypeScript, and the production build passed.
 
-
 The shared header restores the original navigation styling and adds the PNW Cubing logo as a Home link. About uses the menu component with a right-side chevron. Browser checks confirmed that it opens, shows both links, and closes with Escape. The avatar stays in the top right when signed in. Only the Merch and Public Documents URLs remain editable.
 
 The mobile header passed a browser check at 390 pixels wide. The logo and hamburger had matching visible margins. The open menu covered the page with a white panel, and all navigation links remained visible. The page stayed in place beneath the menu. All 119 tests, ESLint, TypeScript, and the production build passed.
+
+FAQ answers now appear directly below their questions on public pages and in the editor preview. The rendering test makes sure that FAQ lists contain no accordion elements. The mobile menu now closes after an outside tap, a selected link, or Escape. About keeps its own menu controls.
+
+Every page renders on the server at request time. The root, delegate, and competition loading screens were removed. Competition cards also render on the server. Public WCA competition requests keep a 60-second cache.
+
+The production preview returned HTTP 200 for all eight public and login routes. Each initial HTML response contained its page content and title, without a loading screen or deferred content. Delegate profiles, competition details, and both FAQ lists appeared without browser JavaScript. Signed-out requests for editor pages redirected to login. All 119 tests, ESLint, TypeScript, and the production build passed. The local development preview remained available on port 3000.
