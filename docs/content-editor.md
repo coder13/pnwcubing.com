@@ -38,7 +38,7 @@ The server reads the current WCA profile for each editor page and save. It also 
 
 If a delegate has one matching profile, the editor selects it automatically. Delegates cannot edit other profiles or other content collections.
 
-Delegates can enter their pronouns in an optional text field. Full editors can also edit this field. Pronouns appear below the name on a published profile. An empty field shows no pronouns. The field accepts up to 100 characters and displays plain text. WCA sync preserves each delegate's choice.
+Delegates can enter their pronouns in an optional text field. Full editors can also edit this field. Pronouns appear beside the name on a published profile, with the WCA competitor ID on the smaller line below. An empty field shows no pronouns. The field accepts up to 100 characters and displays plain text. WCA sync preserves each delegate's choice.
 
 ## Sign in with a Directus account
 

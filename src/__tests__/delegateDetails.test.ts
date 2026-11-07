@@ -21,16 +21,20 @@ const delegate: Delegate = {
   wcaStatus: "delegate",
 };
 
-test("public profiles show optional pronouns as plain text below the delegate name", async () => {
+test("public profiles show optional pronouns beside the name and the WCA ID below", async () => {
   global.fetch = async () => new Response(null, { status: 503 });
   const html = renderToStaticMarkup(
     await DelegateDetails({
       ...delegate,
       name: "Cailyn Sinclair",
       pronouns: "she/her",
+      wcaId: "2010TEST01",
     }),
   );
-  assert.match(html, /Cailyn Sinclair<\/span><\/p><p[^>]*>she\/her<\/p>/);
+  assert.match(
+    html,
+    /Cailyn Sinclair<\/span> \(she\/her\)<\/p><p[^>]*>2010TEST01<\/p>/,
+  );
   for (const pronouns of [undefined, null, "", "  "])
     assert.ok(
       !renderToStaticMarkup(
