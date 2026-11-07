@@ -156,6 +156,14 @@ const definitions = [
       },
       sort,
       {
+        ...text("pronouns"),
+        schema: { is_nullable: true, max_length: 100 },
+        meta: {
+          interface: "input",
+          note: "Optional. Shown on the delegate's public profile.",
+        },
+      },
+      {
         field: "wcaUserId",
         type: "integer",
         schema: { is_unique: true, is_nullable: true },

@@ -163,6 +163,12 @@ for (const policies of [false, true]) {
       "Existing blurb",
     );
     assert.equal(state.items.get("Delegates")![0].status, "published");
+    const pronouns = state.fields
+      .get("Delegates")!
+      .find((field) => field.field === "pronouns")!;
+    assert.equal(pronouns.type, "string");
+    assert.equal((pronouns.schema as Item).is_nullable, true);
+    assert.equal((pronouns.meta as Item).interface, "input");
     assert.deepEqual(
       state.permissions.map((rule) => rule.id),
       [2, 3],
@@ -177,6 +183,7 @@ for (const policies of [false, true]) {
     assert.deepEqual(state.items.get("SiteEditors"), []);
     // A rerun must preserve later changes, hidden records, and deliberate FAQ deletions.
     state.items.get("Delegates")![0].status = "hidden";
+    state.items.get("Delegates")![0].pronouns = "she/her";
     const page = state.items
       .get("SiteContent")!
       .find((item) => item.id === "about.2")!;
@@ -187,6 +194,7 @@ for (const policies of [false, true]) {
     );
     await setupCms();
     assert.equal(state.items.get("Delegates")![0].status, "hidden");
+    assert.equal(state.items.get("Delegates")![0].pronouns, "she/her");
     assert.equal(page.body, "Edited copy");
     assert.equal(state.items.get("FAQ")!.length, 6);
     assert.deepEqual(

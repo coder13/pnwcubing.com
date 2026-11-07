@@ -43,6 +43,10 @@ test("public delegates and FAQ requests always filter to published content", asy
       status: { _eq: "published" },
     });
     assert.equal(url.searchParams.get("limit"), "-1");
+    if (url.pathname === "/items/Delegates")
+      assert.ok(
+        url.searchParams.get("fields")!.split(",").includes("pronouns"),
+      );
     return Response.json({ data: [] });
   };
   assert.deepEqual(await getPublicDelegates(), []);

@@ -10,6 +10,7 @@ import type { Delegate } from "../lib/directus";
 const delegate: Delegate = {
   id: "1",
   name: "Test Delegate",
+  pronouns: "she/her",
   wcaId: "2010TEST01",
   wcaUserId: 123,
   email: "delegate@example.com",
@@ -53,6 +54,7 @@ test("a delegate's single profile opens with all normal fields and a read-only W
   assert.ok(!html.includes("Select a record to edit it."));
   for (const name of [
     "name",
+    "pronouns",
     "email",
     "region",
     "description",
@@ -72,6 +74,12 @@ test("a delegate's single profile opens with all normal fields and a read-only W
     assert.ok(!field.includes("disabled"));
   }
   assert.ok(html.includes(delegate.wcaId));
+  const pronouns = html.match(
+    /<input[^>]+id="editor-Delegates-pronouns"[^>]*>/,
+  )![0];
+  assert.ok(pronouns.includes('type="text"'));
+  assert.ok(pronouns.includes('value="she/her"'));
+  assert.ok(!pronouns.includes("required"));
   assert.ok(!html.includes("Editor navigation"));
   assert.ok(!html.includes(">Delete</button>"));
 });

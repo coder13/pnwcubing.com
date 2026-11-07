@@ -29,7 +29,7 @@ export async function getPublicDelegates(): Promise<Delegate[]> {
       {
         filter: JSON.stringify({ status: { _eq: "published" } }),
         fields:
-          "id,name,email,region,description,wcaId,wcaUserId,wcaStatus,status,sort,date_updated",
+          "id,name,pronouns,email,region,description,wcaId,wcaUserId,wcaStatus,status,sort,date_updated",
         sort: "sort,name",
       },
       !!process.env.DIRECTUS_TOKEN,

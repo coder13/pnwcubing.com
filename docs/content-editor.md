@@ -38,6 +38,8 @@ The server reads the current WCA profile for each editor page and save. It also 
 
 If a delegate has one matching profile, the editor selects it automatically. Delegates cannot edit other profiles or other content collections.
 
+Delegates can enter their pronouns in an optional text field. Full editors can also edit this field. Pronouns appear below the name on a published profile. An empty field shows no pronouns. The field accepts up to 100 characters and displays plain text. WCA sync preserves each delegate's choice.
+
 ## Sign in with a Directus account
 
 The website login page also accepts accounts from `admin.pnwcubing.com`. A WCA account is not required. In the Directus console, open Users and assign the `Content-Editor` role to each approved editor. Existing Directus administrators also have full website content access. Other Directus roles do not grant website editor access.

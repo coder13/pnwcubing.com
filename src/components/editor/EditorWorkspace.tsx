@@ -424,6 +424,7 @@ function RecordForm({
   const fields: Record<ContentCollection, RecordData> = {
     Delegates: {
       name: "",
+      pronouns: "",
       wcaUserId: "",
       wcaId: "",
       email: "",
@@ -596,6 +597,7 @@ function RecordForm({
               {
                 wcaId: "WCA competitor ID",
                 wcaUserId: "WCA user ID (number)",
+                pronouns: "Pronouns (optional)",
                 region: "Local region",
                 id: "WCA user ID (number)",
                 description: "Blurb",
@@ -660,7 +662,9 @@ function RecordForm({
                       : "text"
                   }
                   min={name === "id" || name === "wcaUserId" ? 1 : 0}
-                  maxLength={name === "href" ? 2048 : 300}
+                  maxLength={
+                    name === "href" ? 2048 : name === "pronouns" ? 100 : 300
+                  }
                   readOnly={
                     name === "wcaId" ||
                     (name === "wcaUserId" && (!isEditor || !!record?.wcaUserId))
@@ -685,6 +689,11 @@ function RecordForm({
                     )
                   }
                 />
+              )}
+              {collection === "Delegates" && name === "pronouns" && (
+                <p className="text-sm text-gray-600">
+                  Shown on your public profile.
+                </p>
               )}
               {collection === "Delegates" &&
                 name === "wcaUserId" &&
