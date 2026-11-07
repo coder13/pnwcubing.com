@@ -29,6 +29,7 @@ export function validateContent(
   };
   const allowed = [
     ...fields[collection],
+    ...(collection === "Delegates" ? ["pronouns"] : []),
     ...(create && collection === "SiteEditors" ? ["id"] : []),
   ];
   if (Object.keys(input).some((key) => !allowed.includes(key)))
@@ -57,11 +58,17 @@ export function validateContent(
             ? 100000
             : field === "href"
             ? 2048
+            : field === "pronouns"
+            ? 100
             : field === "description" || field === "answer"
             ? 10000
             : 300)
       )
-        throw new ValidationError(`Enter a valid ${field}.`);
+        throw new ValidationError(
+          field === "pronouns"
+            ? "Enter pronouns as text, up to 100 characters."
+            : `Enter a valid ${field}.`,
+        );
       if (["name", "question", "label"].includes(field) && !value.trim())
         throw new ValidationError(`Enter ${field}.`);
     }
@@ -87,7 +94,9 @@ export function validateContent(
     if (input.kind !== "link" && input.parent !== 0)
       throw new ValidationError("Menus and the logo must be at the top level.");
   }
-  return input;
+  return collection === "Delegates" && typeof input.pronouns === "string"
+    ? { ...input, pronouns: input.pronouns.trim() }
+    : input;
 }
 
 export function validateDelegateProfile(

@@ -46,6 +46,7 @@ const delegate = {
 const identity = { user, isEditor: false };
 const profile = {
   name: "Updated Delegate",
+  pronouns: "she/her",
   email: "updated@example.com",
   region: "Oregon",
   description: "New blurb",
@@ -125,6 +126,22 @@ test("delegates can edit normal profile fields but not identity or system fields
     { status: "public" },
   ])
     assert.throws(() => validateDelegateProfile({ ...profile, ...invalid }));
+});
+
+test("pronouns are optional plain text that can be changed or cleared without changing identity", () => {
+  const { pronouns: _pronouns, ...legacyProfile } = profile;
+  assert.deepEqual(validateDelegateProfile(legacyProfile), legacyProfile);
+  assert.equal(
+    validateDelegateProfile({ ...profile, pronouns: "  they / them  " })
+      .pronouns,
+    "they / them",
+  );
+  assert.equal(
+    validateDelegateProfile({ ...profile, pronouns: "   " }).pronouns,
+    "",
+  );
+  for (const pronouns of [null, 1, ["she/her"], "x".repeat(101)])
+    assert.throws(() => validateDelegateProfile({ ...profile, pronouns }));
 });
 
 test("editor validation rejects unknown fields, invalid statuses, IDs, and orders", () => {

@@ -28,6 +28,7 @@ const saved: Delegate = {
   wcaUserId: 123,
   wcaId: "2010TEST01",
   name: "Custom name",
+  pronouns: "they/them",
   email: "custom@example.com",
   region: "Western Washington",
   description: "My blurb",

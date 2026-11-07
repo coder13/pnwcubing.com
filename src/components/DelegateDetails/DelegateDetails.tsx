@@ -13,9 +13,11 @@ export async function DelegateDetails({
   wcaUserId,
   wcaStatus,
   name,
+  pronouns,
   email,
   description,
 }: DelegateDetailsProps) {
+  const visiblePronouns = pronouns?.trim();
   const person = await (wcaUserId
     ? getWcaAccount(wcaUserId)
     : wcaId
@@ -51,8 +53,9 @@ export async function DelegateDetails({
       <div className="flex flex-1 flex-col mx-4">
         <p>
           <span className="text-2xl">{name}</span>
-          {wcaId ? ` (${wcaId})` : ""}
+          {visiblePronouns ? ` (${visiblePronouns})` : ""}
         </p>
+        {wcaId && <p className="text-sm text-gray-600">{wcaId}</p>}
         <div
           className="rich-text py-2 whitespace-pre-wrap"
           dangerouslySetInnerHTML={{ __html: safeHtml(description) }}

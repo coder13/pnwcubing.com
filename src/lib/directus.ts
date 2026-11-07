@@ -4,6 +4,7 @@ import { rest } from "@directus/sdk/rest";
 export interface Delegate {
   id: string;
   name: string;
+  pronouns?: string | null;
   email: string;
   region: string;
   description: string;
